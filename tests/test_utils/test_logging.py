@@ -1,5 +1,3 @@
-"""Tests for logging utilities - adapted from Flask Guard."""
-
 import logging
 import os
 import tempfile

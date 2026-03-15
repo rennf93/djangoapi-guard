@@ -1,8 +1,11 @@
+import logging
 import os
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 
-from djangoapi_guard import SecurityConfig
+from djangoapi_guard import SecurityConfig, SecurityDecorator
+
+logger = logging.getLogger(__name__)
 
 
 def custom_request_check(request: HttpRequest) -> HttpResponse | None:
@@ -19,29 +22,7 @@ def custom_response_modifier(response: HttpResponse) -> HttpResponse:
     return response
 
 
-SECRET_KEY = "example-secret-key-do-not-use-in-production"
-
-DEBUG = True
-
-ALLOWED_HOSTS = ["*"]
-
-ROOT_URLCONF = "example_project.urls"
-
-WSGI_APPLICATION = "example_project.wsgi.application"
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-INSTALLED_APPS = [
-    "django.contrib.contenttypes",
-    "django.contrib.auth",
-]
-
-MIDDLEWARE = [
-    "djangoapi_guard.DjangoAPIGuard",
-    "django.middleware.common.CommonMiddleware",
-]
-
-GUARD_SECURITY_CONFIG = SecurityConfig(
+security_config = SecurityConfig(
     whitelist=[],
     blacklist=["192.168.100.0/24"],
     trusted_proxies=["172.16.0.0/12", "10.0.0.0/8"],
@@ -71,7 +52,10 @@ GUARD_SECURITY_CONFIG = SecurityConfig(
             "script-src": ["'self'", "'strict-dynamic'"],
             "style-src": ["'self'", "'unsafe-inline'"],
             "img-src": ["'self'", "data:", "https:"],
-            "font-src": ["'self'", "https://fonts.gstatic.com"],
+            "font-src": [
+                "'self'",
+                "https://fonts.gstatic.com",
+            ],
             "connect-src": ["'self'"],
         },
         "hsts": {
@@ -87,13 +71,22 @@ GUARD_SECURITY_CONFIG = SecurityConfig(
             "payment=(), usb=()"
         ),
         "custom": {
-            "X-App-Name": "DjangoAPI-Guard-Simple-Example",
+            "X-App-Name": "DjangoAPI-Guard-Advanced-Example",
             "X-Security-Contact": "security@example.com",
         },
     },
     enable_cors=True,
-    cors_allow_origins=["http://localhost:3000", "https://example.com"],
-    cors_allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    cors_allow_origins=[
+        "http://localhost:3000",
+        "https://example.com",
+    ],
+    cors_allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+    ],
     cors_allow_headers=["*"],
     cors_allow_credentials=True,
     cors_expose_headers=["X-Total-Count"],
@@ -101,6 +94,13 @@ GUARD_SECURITY_CONFIG = SecurityConfig(
     log_request_level="INFO",
     log_suspicious_level="WARNING",
     custom_log_file="security.log",
-    exclude_paths=["/favicon.ico", "/static", "/health", "/ready"],
+    exclude_paths=[
+        "/favicon.ico",
+        "/static",
+        "/health",
+        "/ready",
+    ],
     passive_mode=False,
 )
+
+guard = SecurityDecorator(security_config)

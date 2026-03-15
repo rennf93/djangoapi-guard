@@ -1,3 +1,0 @@
-djangoapi-guard
-gunicorn
-redis

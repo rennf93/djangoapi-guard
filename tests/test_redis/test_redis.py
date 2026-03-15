@@ -1,5 +1,3 @@
-"""Tests for Redis handler - adapted from Flask Guard."""
-
 import os
 import time
 from typing import Any

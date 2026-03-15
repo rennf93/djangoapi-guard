@@ -1,101 +1,78 @@
-DjangoAPI Guard Advanced Example
-=================================
+# DjangoAPI Guard Advanced Example
 
-This example demonstrates the full feature set of DjangoAPI Guard including Redis integration, security decorators, behavioral analysis, and advanced access control.
+Production-ready deployment demonstrating djangoapi-guard with nginx reverse proxy, gunicorn process management, and modular project layout.
 
-___
+## Architecture
 
-Running the example
--------------------
+```text
+Client -> nginx (port 80) -> gunicorn (port 8000) -> Django + guard middleware
+                                                               |
+                                                          Redis (cache)
+```
 
-Using Docker Compose
---------------------
+- **nginx**: Reverse proxy with rate limiting and IP forwarding headers
+- **gunicorn**: Process manager with gthread workers for concurrent requests
+- **djangoapi-guard**: Application-level security middleware (IP filtering, penetration detection, behavioral analysis)
+- **Redis**: Distributed cache for rate limiting and IP ban state
+
+## Quick Start
 
 ```bash
 cd examples/advanced
-docker compose up
-
-# Restart
-docker compose restart
-
-# Stop
-docker compose down
+docker compose up --build
 ```
 
-Running locally
----------------
+## Testing
 
 ```bash
-cd examples/advanced
-pip install -r requirements.txt
-python manage.py runserver 0.0.0.0:8000
+curl http://localhost/health
+curl http://localhost/basic/ip
+curl http://localhost/basic/echo -X POST -H "Content-Type: application/json" -d '{"test": true}'
+curl http://localhost/test/xss-test -X POST -H "Content-Type: application/json" -d '"<script>alert(1)</script>"'
+for i in $(seq 1 5); do curl -s -o /dev/null -w "%{http_code}\n" http://localhost/rate/strict-limit; done
 ```
 
-___
+## Key Differences from simple_app
 
-Available endpoints
--------------------
+| Feature | simple_app | advanced_app |
+|---------|-----------|--------------|
+| Reverse proxy | None | nginx with rate limiting |
+| Process manager | gunicorn (dev) | gunicorn + gthread workers |
+| Docker build | pip install | Multi-stage with uv |
+| Runtime user | root | Non-root (guard) |
+| Project layout | Single file | Modular routes + security config |
+| Health checks | None | Docker health checks on all services |
+| Resource limits | None | CPU and memory limits |
+| Proxy trust | N/A | trusted_proxy_depth=1 |
 
-**Basic:**
+## Configuration
 
-- `/` - Root endpoint with API overview
-- `/health` - Health check (excluded from security checks)
-- `/api/info` - API information
+Environment variables (see `.env`):
 
-**Rate Limiting:**
+- `REDIS_URL` - Redis connection string
+- `REDIS_PREFIX` - Key prefix for Redis
+- `IPINFO_TOKEN` - IPInfo API token
+- `WEB_CONCURRENCY` - Number of gunicorn workers
+- `LOG_LEVEL` - Logging level
 
-- `/api/limited` - Rate-limited to 5 requests per minute
+## Endpoints
 
-**Authentication:**
+All endpoints organized into route modules:
 
-- `/api/protected` - Requires Bearer token
-- `/api/api-key` - Requires X-API-Key header
+- `/health`, `/ready` - Health checks
+- `/basic/*` - Connection test, IP info, echo
+- `/access/*` - IP whitelist/blacklist, country, cloud provider filtering
+- `/auth/*` - HTTPS, bearer, API key, custom headers
+- `/rate/*` - Custom rate limits, geo-based rate limits
+- `/behavior/*` - Usage/return monitoring, frequency detection
+- `/headers/*` - CSP test, frame test, HSTS info
+- `/content/*` - Bot blocking, JSON only, size limit, referrer check
+- `/advanced/*` - Time windows, honeypot, suspicious pattern detection
+- `/admin/*` - Ban/unban, stats, emergency mode, cloud status
+- `/test/*` - XSS, SQL injection, path traversal, command injection
 
-**Content Filtering:**
+## Cleanup
 
-- `POST /api/json-only` - Only accepts application/json
-- `POST /api/small-payload` - 1KB max request size
-
-**Access Control:**
-
-- `/api/local-only` - Restricted to local/private IPs
-
-**Advanced:**
-
-- `/api/business-hours` - Available only during 09:00-17:00 UTC
-- `POST /api/honeypot` - Honeypot bot detection
-
-**Behavioral Analysis:**
-
-- `/api/monitored` - Usage monitoring (10 calls/hour)
-
-**Admin:**
-
-- `POST /api/admin/ban/<ip>` - Ban an IP (requires Bearer token)
-- `POST /api/admin/unban/<ip>` - Unban an IP (requires Bearer token)
-
-**Security Tests:**
-
-- `/api/test/xss` - Test XSS detection (try `?q=<script>alert(1)</script>`)
-- `/api/test/sqli` - Test SQL injection detection (try `?q=' OR 1=1 --`)
-
-**Bypass:**
-
-- `/api/unprotected` - Bypasses all security checks
-
-___
-
-Environment variables
----------------------
-
-- `IPINFO_TOKEN` - Token for IPInfo geolocation (required for country blocking)
-- `REDIS_URL` - URL for Redis connection (default: `redis://localhost:6379`)
-- `REDIS_PREFIX` - Prefix for Redis keys (default: `djangoapi_guard:`)
-- `DJANGO_SETTINGS_MODULE` - Django settings module (default: `advanced_project.settings`)
-
-___
-
-Configuration
--------------
-
-See the configuration in `advanced_project/settings.py` for an example of how to configure DjangoAPI Guard with Redis, CORS, and all advanced features.
+```bash
+docker compose down -v
+```

@@ -1,35 +1,75 @@
-"""
-URL configuration for the advanced example project.
-"""
+import logging
 
-from advanced_app import views
-from django.urls import path
+from advanced_app.models import error_response
+from advanced_app.routes.access_control import urlpatterns as access_urls
+from advanced_app.routes.admin import urlpatterns as admin_urls
+from advanced_app.routes.advanced import urlpatterns as advanced_urls
+from advanced_app.routes.auth import urlpatterns as auth_urls
+from advanced_app.routes.basic import urlpatterns as basic_urls
+from advanced_app.routes.behavioral import urlpatterns as behavior_urls
+from advanced_app.routes.content import urlpatterns as content_urls
+from advanced_app.routes.headers import urlpatterns as headers_urls
+from advanced_app.routes.health import urlpatterns as health_urls
+from advanced_app.routes.rate_limiting import urlpatterns as rate_urls
+from advanced_app.routes.testing import urlpatterns as test_urls
+from django.http import HttpRequest, JsonResponse
+from django.urls import include, path
+
+logger = logging.getLogger(__name__)
+
+
+def root(request: HttpRequest) -> JsonResponse:
+    return JsonResponse(
+        {
+            "message": "DjangoAPI Guard Advanced Example API",
+            "version": "1.0.0",
+            "infrastructure": {
+                "reverse_proxy": "nginx",
+                "process_manager": "gunicorn",
+                "cache": "redis",
+            },
+            "routes": {
+                "/health": "Health checks",
+                "/basic": "Basic security features",
+                "/access": "Access control",
+                "/auth": "Authentication examples",
+                "/rate": "Rate limiting",
+                "/behavior": "Behavioral analysis",
+                "/headers": "Security headers",
+                "/content": "Content filtering",
+                "/advanced": "Advanced features",
+                "/admin": "Admin utilities",
+                "/test": "Security testing",
+            },
+        }
+    )
+
+
+def handler404_view(request: HttpRequest, exception: Exception) -> JsonResponse:
+    return JsonResponse(error_response("Not found", "HTTP_404"), status=404)
+
+
+def handler500_view(request: HttpRequest) -> JsonResponse:
+    logger.error("Internal server error", exc_info=True)
+    return JsonResponse(
+        error_response("Internal server error", "INTERNAL_ERROR"), status=500
+    )
+
 
 urlpatterns = [
-    path("", views.root, name="root"),
-    path("health", views.health, name="health"),
-    path("api/info", views.api_info, name="api-info"),
-    # Rate limited routes
-    path("api/limited", views.rate_limited, name="api-limited"),
-    # Authentication routes
-    path("api/protected", views.protected, name="api-protected"),
-    path("api/api-key", views.api_key_protected, name="api-key"),
-    # Content filtering routes
-    path("api/json-only", views.json_only, name="json-only"),
-    path("api/small-payload", views.small_payload, name="small-payload"),
-    # Access control routes
-    path("api/local-only", views.local_only, name="local-only"),
-    # Advanced routes
-    path("api/business-hours", views.business_hours, name="business-hours"),
-    path("api/honeypot", views.honeypot_endpoint, name="honeypot"),
-    # Behavioral analysis routes
-    path("api/monitored", views.monitored, name="monitored"),
-    # Admin routes
-    path("api/admin/ban/<str:ip>", views.ban_ip, name="ban-ip"),
-    path("api/admin/unban/<str:ip>", views.unban_ip, name="unban-ip"),
-    # Security test routes
-    path("api/test/xss", views.test_xss, name="test-xss"),
-    path("api/test/sqli", views.test_sqli, name="test-sqli"),
-    # Bypass route
-    path("api/unprotected", views.unprotected, name="unprotected"),
+    path("", root),
+    *health_urls,
+    path("basic/", include((basic_urls, "basic"))),
+    path("access/", include((access_urls, "access"))),
+    path("auth/", include((auth_urls, "auth"))),
+    path("rate/", include((rate_urls, "rate"))),
+    path("behavior/", include((behavior_urls, "behavior"))),
+    path("headers/", include((headers_urls, "headers"))),
+    path("content/", include((content_urls, "content"))),
+    path("advanced/", include((advanced_urls, "advanced"))),
+    path("admin/", include((admin_urls, "admin"))),
+    path("test/", include((test_urls, "test"))),
 ]
+
+handler404 = "advanced_project.urls.handler404_view"
+handler500 = "advanced_project.urls.handler500_view"

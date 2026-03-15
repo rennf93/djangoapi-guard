@@ -1,5 +1,3 @@
-"""Tests for IP Ban Manager - adapted from Flask Guard."""
-
 import os
 import time
 

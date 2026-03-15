@@ -1,5 +1,3 @@
-"""Tests for cloud IP handling - adapted from Flask Guard."""
-
 import ipaddress
 import itertools
 import os

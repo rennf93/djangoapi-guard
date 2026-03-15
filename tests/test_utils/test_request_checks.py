@@ -1,5 +1,3 @@
-"""Tests for request checks - adapted from Flask Guard."""
-
 import logging
 import os
 from typing import Any

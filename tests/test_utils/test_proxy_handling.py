@@ -1,5 +1,3 @@
-"""Tests for proxy handling - adapted from Flask Guard."""
-
 import logging
 import os
 from unittest.mock import patch

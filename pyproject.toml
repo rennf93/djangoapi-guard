@@ -53,6 +53,7 @@ dev = [
     "radon",
     "ruff",
     "safety",
+    "setuptools",
     "types-cachetools",
     "types-requests",
     "types-setuptools",
