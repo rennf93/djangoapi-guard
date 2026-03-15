@@ -92,7 +92,7 @@ ___
 
 To use `djapi-guard`, you need to add the middleware to your Django project and configure the security settings. Here's a basic example:
 
-**settings.py**
+### settings.py
 
 ```python
 MIDDLEWARE = [
@@ -128,7 +128,7 @@ GUARD_SECURITY_CONFIG = {
 }
 ```
 
-**views.py**
+### views.py
 
 ```python
 from django.http import JsonResponse

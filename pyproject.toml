@@ -53,10 +53,8 @@ dev = [
     "radon",
     "ruff",
     "safety",
-    "setuptools",
     "types-cachetools",
     "types-requests",
-    "types-setuptools",
     "vulture",
     "xenon",
 ]
@@ -121,16 +119,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "django.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "setuptools"
-follow_imports = "skip"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "setuptools.*"
-follow_imports = "skip"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -240,7 +228,6 @@ per_rule_ignores = { "DEP001" = ["guard_agent"], "DEP002" = [
     "safety",
     "types-cachetools",
     "types-requests",
-    "types-setuptools",
     "vulture",
     "xenon",
 ] }

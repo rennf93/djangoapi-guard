@@ -22,15 +22,19 @@ print(f"Slow patterns: {len(stats['slow_patterns'])}")
 ## Optimization Strategies
 
 ### 1. Pattern Optimization
+
 Identify and optimize slow patterns. Use non-capturing groups for better performance.
 
 ### 2. Content Preprocessing
+
 Adjust `detection_max_content_length` based on your typical request size.
 
 ### 3. Semantic Analysis Tuning
+
 Adjust `detection_semantic_threshold` for your performance vs. security trade-off.
 
 ### 4. Timeout Configuration
+
 Set `detection_compiler_timeout` based on endpoint criticality.
 
 ## Performance Checklist

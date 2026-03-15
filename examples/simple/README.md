@@ -1,12 +1,10 @@
-DjangoAPI Guard Simple Example
-==============================
+# DjangoAPI Guard Simple Example
 
 Single-project Django application demonstrating all djapi-guard security features.
 
 ___
 
-Quick Start
------------
+## Quick Start
 
 ```bash
 docker compose up --build
@@ -14,8 +12,7 @@ docker compose up --build
 
 ___
 
-Testing
--------
+## Testing
 
 ```bash
 curl http://localhost:8000/
@@ -28,8 +25,7 @@ for i in $(seq 1 5); do curl -s -o /dev/null -w "%{http_code}\n" http://localhos
 
 ___
 
-Endpoints
----------
+## Endpoints
 
 ### Root
 
@@ -115,8 +111,7 @@ Endpoints
 
 ___
 
-Environment Variables
----------------------
+## Environment Variables
 
 - `REDIS_URL` - Redis connection string (default: `redis://localhost:6379`)
 - `REDIS_PREFIX` - Key prefix for Redis (default: `djangoapi_guard:`)
@@ -124,15 +119,13 @@ Environment Variables
 
 ___
 
-Configuration
--------------
+## Configuration
 
 See `example_project/settings.py` for the full `GUARD_SECURITY_CONFIG` with all security features configured.
 
 ___
 
-Cleanup
--------
+## Cleanup
 
 ```bash
 docker compose down -v

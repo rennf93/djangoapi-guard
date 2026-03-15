@@ -20,9 +20,11 @@ flowchart TD
 ## Core Components
 
 ### 1. SusPatternsManager
+
 Central component managing detection process with singleton pattern, pattern loading, and component orchestration.
 
 ### 2. Component Initialization
+
 Components are initialized lazily based on configuration - PatternCompiler, ContentPreprocessor, SemanticAnalyzer, and PerformanceMonitor.
 
 ## Detection Flow
