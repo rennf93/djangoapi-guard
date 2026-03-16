@@ -684,19 +684,14 @@ class TestExtensionAgentIntegration:
         mock_redis_handler = MagicMock()
         middleware.redis_handler = mock_redis_handler
 
-        mock_rate_handler = MagicMock()
-        mock_rate_handler.check_rate_limit = MagicMock(
+        middleware.rate_limit_handler = MagicMock()
+        middleware.rate_limit_handler.check_rate_limit = MagicMock(
             return_value=HttpResponse("Rate limit exceeded", status=429)
         )
-        mock_rate_handler.initialize_redis = MagicMock()
 
         factory = RequestFactory()
 
         with (
-            patch(
-                "djangoapi_guard.core.checks.implementations.rate_limit.RateLimitManager",
-                return_value=mock_rate_handler,
-            ),
             patch(
                 "djangoapi_guard.utils.extract_client_ip",
                 MagicMock(return_value="127.0.0.1"),
@@ -741,21 +736,16 @@ class TestExtensionAgentIntegration:
         mock_redis_handler = MagicMock()
         middleware.redis_handler = mock_redis_handler
 
-        mock_rate_handler = MagicMock()
-        mock_rate_handler.check_rate_limit = MagicMock(
+        middleware.rate_limit_handler = MagicMock()
+        middleware.rate_limit_handler.check_rate_limit = MagicMock(
             return_value=HttpResponse("Rate limit exceeded", status=429)
         )
-        mock_rate_handler.initialize_redis = MagicMock()
 
         factory = RequestFactory()
 
         with (
             patch.object(
                 middleware.route_resolver, "get_route_config", return_value=route_config
-            ),
-            patch(
-                "djangoapi_guard.core.checks.implementations.rate_limit.RateLimitManager",
-                return_value=mock_rate_handler,
             ),
             patch(
                 "djangoapi_guard.utils.extract_client_ip",
@@ -838,7 +828,9 @@ class TestExtensionAgentIntegration:
         )
 
     def test_initialize_with_agent_handler(self) -> None:
-        mock_geo_ip_handler = MagicMock()
+        from djangoapi_guard.protocols.geo_ip_protocol import GeoIPHandler
+
+        mock_geo_ip_handler = MagicMock(spec=GeoIPHandler)
         mock_geo_ip_handler.initialize_agent = MagicMock()
         mock_geo_ip_handler.initialize_redis = MagicMock()
 

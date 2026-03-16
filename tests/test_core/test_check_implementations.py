@@ -295,21 +295,6 @@ class TestIpSecurityCheck:
 
 
 class TestRateLimitCheck:
-    def test_rate_create_handler(self, mock_guard: Mock) -> None:
-        """creates temp handler."""
-        mock_guard.redis_handler = None
-        check = RateLimitCheck(mock_guard)
-        handler = check._create_rate_handler(100, 60)
-        assert handler is not None
-        assert handler.config.rate_limit == 100
-
-    def test_rate_create_handler_with_redis(self, mock_guard: Mock) -> None:
-        """initializes redis on temp handler."""
-        mock_guard.redis_handler = Mock()
-        check = RateLimitCheck(mock_guard)
-        handler = check._create_rate_handler(100, 60)
-        assert handler is not None
-
     def test_rate_event_no_bus(self, mock_guard: Mock, rf: RequestFactory) -> None:
         """event_bus=None returns early."""
         mock_guard.event_bus = None
