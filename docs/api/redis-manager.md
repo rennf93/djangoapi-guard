@@ -34,8 +34,8 @@ Usage Example
 -------------
 
 ```python
-from djangoapi_guard.handlers.redis_handler import RedisManager
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import RedisManager
+from djangoapi_guard import SecurityConfig
 
 config = SecurityConfig(redis_url="redis://localhost:6379")
 redis = RedisManager(config)

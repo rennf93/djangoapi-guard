@@ -10,11 +10,12 @@ from typing import Any, cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
+from guard_core.decorators.base import RouteConfig
+from guard_core.sync.handlers.behavior_handler import BehaviorRule
 
 from djangoapi_guard import SecurityConfig, SecurityDecorator
-from djangoapi_guard.decorators.base import RouteConfig
-from djangoapi_guard.handlers.behavior_handler import BehaviorRule
+from djangoapi_guard.adapters import DjangoGuardRequest
 from djangoapi_guard.middleware import DjangoAPIGuard
 
 
@@ -57,20 +58,14 @@ def test_get_endpoint_id_with_route(security_config: SecurityConfig) -> None:
     mock_request.path = "/test"
     mock_request.path_info = "/test"
     mock_request.method = "GET"
+    mock_request.guard_endpoint_id = "test_module.test_function"
 
-    mock_resolved = Mock()
-    mock_view_func = Mock()
-    mock_view_func.__module__ = "test_module"
-    mock_view_func.__qualname__ = "test_function"
-    mock_resolved.func = mock_view_func
+    endpoint_id = middleware._get_endpoint_id(mock_request)
+    assert endpoint_id == "test_module.test_function"
 
-    with patch("django.urls.resolve", return_value=mock_resolved):
-        endpoint_id = middleware._get_endpoint_id(mock_request)
-        assert endpoint_id == "test_module.test_function"
-
-    with patch("django.urls.resolve", side_effect=Exception("Not found")):
-        endpoint_id = middleware._get_endpoint_id(mock_request)
-        assert endpoint_id == "GET:/test"
+    mock_request.guard_endpoint_id = None
+    endpoint_id = middleware._get_endpoint_id(mock_request)
+    assert endpoint_id == "GET:/test"
 
 
 def test_should_bypass_check(security_config: SecurityConfig) -> None:
@@ -183,7 +178,7 @@ def test_check_user_agent_allowed(security_config: SecurityConfig) -> None:
     mock_route_config = Mock()
     mock_route_config.blocked_user_agents = [r"badbot"]
 
-    with patch("djangoapi_guard.utils.is_user_agent_allowed", return_value=True):
+    with patch("guard_core.sync.utils.is_user_agent_allowed", return_value=True):
         result = middleware._check_user_agent_allowed("badbot", mock_route_config)
         assert result is False
 
@@ -191,7 +186,7 @@ def test_check_user_agent_allowed(security_config: SecurityConfig) -> None:
         assert result is True
 
     with patch(
-        "djangoapi_guard.utils.is_user_agent_allowed", return_value=False
+        "guard_core.sync.utils.is_user_agent_allowed", return_value=False
     ) as mock_global:
         result = middleware._check_user_agent_allowed("somebot", None)
         assert result is False
@@ -215,21 +210,21 @@ def test_time_window_overnight(security_config: SecurityConfig) -> None:
 
     time_restrictions = {"start": "22:00", "end": "06:00"}
 
-    with patch("djangoapi_guard.core.validation.validator.datetime") as mock_datetime:
+    with patch("guard_core.sync.core.validation.validator.datetime") as mock_datetime:
         mock_now = Mock()
         mock_now.strftime.return_value = "23:00"
         mock_datetime.now.return_value = mock_now
         result = middleware._check_time_window(time_restrictions)
         assert result is True
 
-    with patch("djangoapi_guard.core.validation.validator.datetime") as mock_datetime:
+    with patch("guard_core.sync.core.validation.validator.datetime") as mock_datetime:
         mock_now = Mock()
         mock_now.strftime.return_value = "05:00"
         mock_datetime.now.return_value = mock_now
         result = middleware._check_time_window(time_restrictions)
         assert result is True
 
-    with patch("djangoapi_guard.core.validation.validator.datetime") as mock_datetime:
+    with patch("guard_core.sync.core.validation.validator.datetime") as mock_datetime:
         mock_now = Mock()
         mock_now.strftime.return_value = "12:00"
         mock_datetime.now.return_value = mock_now
@@ -242,14 +237,14 @@ def test_time_window_normal(security_config: SecurityConfig) -> None:
 
     time_restrictions = {"start": "09:00", "end": "17:00"}
 
-    with patch("djangoapi_guard.core.validation.validator.datetime") as mock_datetime:
+    with patch("guard_core.sync.core.validation.validator.datetime") as mock_datetime:
         mock_now = Mock()
         mock_now.strftime.return_value = "12:00"
         mock_datetime.now.return_value = mock_now
         result = middleware._check_time_window(time_restrictions)
         assert result is True
 
-    with patch("djangoapi_guard.core.validation.validator.datetime") as mock_datetime:
+    with patch("guard_core.sync.core.validation.validator.datetime") as mock_datetime:
         mock_now = Mock()
         mock_now.strftime.return_value = "20:00"
         mock_datetime.now.return_value = mock_now
@@ -372,15 +367,20 @@ def test_get_route_decorator_config_no_guard_decorator(
 
     middleware.set_decorator_handler(None)
 
-    mock_request = Mock()
-    mock_request.path_info = "/test"
+    django_request = HttpRequest()
+    django_request.path = "/test"
+    django_request.path_info = "/test"
+    django_request.method = "GET"
+    django_request.META["SERVER_NAME"] = "localhost"
+    django_request.META["SERVER_PORT"] = "80"
 
     assert middleware.route_resolver is not None
-    result = middleware.route_resolver.get_route_config(mock_request)
+    guard_req = DjangoGuardRequest(django_request)
+    result = middleware.route_resolver.get_route_config(guard_req)
     assert result is None
 
 
-def test_get_route_decorator_config_fallback_to_guard_decorator(
+def test_get_route_decorator_config_no_guard_route_id(
     security_config: SecurityConfig,
 ) -> None:
     middleware = _make_middleware(security_config)
@@ -388,18 +388,18 @@ def test_get_route_decorator_config_fallback_to_guard_decorator(
     decorator = SecurityDecorator(security_config)
     middleware.set_decorator_handler(decorator)
 
-    mock_request = Mock()
-    mock_request.path_info = "/nonexistent"
-
-    from django.urls import Resolver404
+    django_request = HttpRequest()
+    django_request.path = "/nonexistent"
+    django_request.path_info = "/nonexistent"
+    django_request.method = "GET"
+    django_request.META["SERVER_NAME"] = "localhost"
+    django_request.META["SERVER_PORT"] = "80"
 
     assert middleware.route_resolver is not None
-    with patch(
-        "djangoapi_guard.core.routing.resolver.resolve",
-        side_effect=Resolver404("Not found"),
-    ):
-        result = middleware.route_resolver.get_route_config(mock_request)
-        assert result is None
+    result = middleware.route_resolver.get_route_config(
+        DjangoGuardRequest(django_request)
+    )
+    assert result is None
 
 
 def test_get_route_decorator_config_no_matching_route(
@@ -410,20 +410,19 @@ def test_get_route_decorator_config_no_matching_route(
     decorator = SecurityDecorator(security_config)
     middleware.set_decorator_handler(decorator)
 
-    mock_request = Mock()
-    mock_request.path_info = "/nonexistent"
-
-    mock_resolved = Mock()
-    mock_view = Mock(spec=[])
-    mock_resolved.func = mock_view
+    django_request = HttpRequest()
+    django_request.path = "/nonexistent"
+    django_request.path_info = "/nonexistent"
+    django_request.method = "GET"
+    django_request.META["SERVER_NAME"] = "localhost"
+    django_request.META["SERVER_PORT"] = "80"
+    django_request.guard_route_id = "nonexistent_route_id"
 
     assert middleware.route_resolver is not None
-    with patch(
-        "djangoapi_guard.core.routing.resolver.resolve",
-        return_value=mock_resolved,
-    ):
-        result = middleware.route_resolver.get_route_config(mock_request)
-        assert result is None
+    result = middleware.route_resolver.get_route_config(
+        DjangoGuardRequest(django_request)
+    )
+    assert result is None
 
 
 def test_bypass_all_security_checks(security_config: SecurityConfig) -> None:
@@ -451,6 +450,7 @@ def test_bypass_all_security_checks_with_custom_modifier() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         custom_response_modifier=custom_modifier,
     )
 

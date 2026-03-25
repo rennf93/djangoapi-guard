@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from advanced_app.models import message_response, stats_response
 from advanced_app.security import guard
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import cloud_handler
 
 logger = logging.getLogger(__name__)
 

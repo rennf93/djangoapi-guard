@@ -16,7 +16,7 @@ Class Reference
 ---------------
 
 ```python
-from djangoapi_guard.handlers.security_headers_handler import SecurityHeadersManager
+from djangoapi_guard import SecurityHeadersManager
 security_headers_manager = SecurityHeadersManager()
 ```
 

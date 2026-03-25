@@ -12,12 +12,12 @@ django.setup()
 import pytest
 from django.http import HttpRequest, HttpResponse
 from django.test import RequestFactory
+from guard_core.models import SecurityConfig
+from guard_core.sync.handlers.cloud_handler import cloud_handler
+from guard_core.sync.handlers.ipban_handler import ip_ban_manager
+from guard_core.sync.handlers.ratelimit_handler import RateLimitManager
 
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
-from djangoapi_guard.handlers.ipban_handler import ip_ban_manager
-from djangoapi_guard.handlers.ratelimit_handler import RateLimitManager
 from djangoapi_guard.middleware import DjangoAPIGuard
-from djangoapi_guard.models import SecurityConfig
 
 
 def _get_response(request: HttpRequest) -> HttpResponse:
@@ -30,7 +30,11 @@ def _make_middleware(
 ) -> DjangoAPIGuard:
     """Create a DjangoAPIGuard instance with the given config."""
     if config is None:
-        config = SecurityConfig(enable_redis=False, enable_agent=False)
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_agent=False,
+            enable_penetration_detection=False,
+        )
     with patch.object(
         django.conf.settings, "GUARD_SECURITY_CONFIG", config, create=True
     ):
@@ -50,6 +54,7 @@ def test_rate_limiting() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         rate_limit=2,
         rate_limit_window=1,
         enable_rate_limiting=True,
@@ -84,6 +89,7 @@ def test_excluded_paths() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         exclude_paths=["/docs", "/favicon.ico"],
     )
     middleware = _make_middleware(config)
@@ -100,6 +106,7 @@ def test_ip_whitelist() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         whitelist=["127.0.0.1"],
     )
     middleware = _make_middleware(config)
@@ -116,6 +123,7 @@ def test_ip_blacklist() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         blacklist=["192.168.1.100"],
     )
     middleware = _make_middleware(config)
@@ -132,6 +140,7 @@ def test_user_agent_blocking() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         blocked_user_agents=[r"badbot"],
     )
     middleware = _make_middleware(config)
@@ -148,6 +157,7 @@ def test_normal_request() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
     )
     middleware = _make_middleware(config)
     factory = RequestFactory()
@@ -163,6 +173,7 @@ def test_custom_error_responses() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         blacklist=["10.0.0.1"],
         custom_error_responses={403: "Custom Forbidden"},
     )
@@ -180,6 +191,7 @@ def test_passive_mode() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         passive_mode=True,
         blacklist=["10.0.0.1"],
     )
@@ -199,6 +211,7 @@ def test_cors_preflight() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         enable_cors=True,
         cors_allow_origins=["https://example.com"],
         cors_allow_methods=["GET", "POST"],
@@ -236,6 +249,7 @@ def test_banned_ip() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         enable_ip_banning=True,
     )
     middleware = _make_middleware(config)
@@ -254,6 +268,7 @@ def test_security_headers_applied() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         security_headers={
             "enabled": True,
             "hsts": {"max_age": 31536000, "include_subdomains": True, "preload": False},
@@ -277,6 +292,7 @@ def test_middleware_reset() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
     )
     middleware = _make_middleware(config)
     middleware.reset()
@@ -288,6 +304,7 @@ def test_multiple_requests_rate_limit() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         rate_limit=100,
         enable_rate_limiting=True,
     )
@@ -306,6 +323,7 @@ def test_https_enforcement() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         enforce_https=True,
     )
     middleware = _make_middleware(config)
@@ -322,14 +340,17 @@ def test_https_enforcement() -> None:
 def test_guard_with_custom_check() -> None:
     """Test custom request check."""
 
-    def custom_check(request: HttpRequest) -> HttpResponse | None:
-        if request.META.get("HTTP_X_CUSTOM") == "block":
-            return HttpResponse("Blocked", status=403)
+    from djangoapi_guard.adapters import DjangoGuardResponse
+
+    def custom_check(request):  # type: ignore[no-untyped-def]
+        if request.headers.get("X-Custom") == "block":
+            return DjangoGuardResponse(HttpResponse("Blocked", status=403))
         return None
 
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         custom_request_check=custom_check,
     )
     middleware = _make_middleware(config)
@@ -344,13 +365,14 @@ def test_guard_with_custom_check() -> None:
 def test_guard_with_custom_response_modifier() -> None:
     """Test custom response modifier."""
 
-    def custom_modifier(response: HttpResponse) -> HttpResponse:
-        response["X-Custom-Header"] = "modified"
+    def custom_modifier(response):  # type: ignore[no-untyped-def]
+        response.headers["X-Custom-Header"] = "modified"
         return response
 
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         custom_response_modifier=custom_modifier,
     )
     middleware = _make_middleware(config)
@@ -368,6 +390,7 @@ def test_cidr_blacklist_blocking() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         blacklist=["10.0.0.0/24"],
     )
     middleware = _make_middleware(config)
@@ -384,6 +407,7 @@ def test_cidr_whitelist_allows() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         whitelist=["10.0.0.0/24"],
     )
     middleware = _make_middleware(config)
@@ -400,6 +424,7 @@ def test_blocked_user_agent_pattern() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         blocked_user_agents=[r".*crawler.*"],
     )
     middleware = _make_middleware(config)
@@ -471,9 +496,13 @@ def test_auto_ban_threshold() -> None:
 
 def test_set_decorator_handler() -> None:
     """Test setting a decorator handler."""
-    from djangoapi_guard.decorators.base import BaseSecurityDecorator
+    from guard_core.decorators.base import BaseSecurityDecorator
 
-    config = SecurityConfig(enable_redis=False, enable_agent=False)
+    config = SecurityConfig(
+        enable_redis=False,
+        enable_agent=False,
+        enable_penetration_detection=False,
+    )
     middleware = _make_middleware(config)
 
     decorator = BaseSecurityDecorator(config)
@@ -486,6 +515,7 @@ def test_refresh_cloud_ip_ranges() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         block_cloud_providers={"AWS"},
     )
     middleware = _make_middleware(config)
@@ -497,7 +527,11 @@ def test_refresh_cloud_ip_ranges() -> None:
 
 def test_create_error_response() -> None:
     """Test creating error responses."""
-    config = SecurityConfig(enable_redis=False, enable_agent=False)
+    config = SecurityConfig(
+        enable_redis=False,
+        enable_agent=False,
+        enable_penetration_detection=False,
+    )
     middleware = _make_middleware(config)
 
     response = middleware.create_error_response(403, "Forbidden")
@@ -509,6 +543,7 @@ def test_middleware_with_disabled_security_headers() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         security_headers={"enabled": False},
     )
     middleware = _make_middleware(config)
@@ -525,6 +560,7 @@ def test_middleware_with_no_security_headers() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         security_headers=None,
     )
     middleware = _make_middleware(config)
@@ -541,6 +577,7 @@ def test_json_log_format() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         log_format="json",
     )
     middleware = _make_middleware(config)
@@ -552,6 +589,7 @@ def test_endpoint_rate_limits() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         endpoint_rate_limits={"/api/sensitive": (1, 60)},
         rate_limit=100,
     )
@@ -564,6 +602,7 @@ def test_emergency_mode_config() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         emergency_mode=True,
         emergency_whitelist=["10.0.0.1"],
     )
@@ -576,6 +615,7 @@ def test_detection_config_fields() -> None:
     config = SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
         detection_compiler_timeout=3.0,
         detection_max_content_length=5000,
         detection_semantic_threshold=0.8,
@@ -587,7 +627,11 @@ def test_detection_config_fields() -> None:
 
 def test_middleware_process_response() -> None:
     """Test middleware processes response correctly."""
-    config = SecurityConfig(enable_redis=False, enable_agent=False)
+    config = SecurityConfig(
+        enable_redis=False,
+        enable_agent=False,
+        enable_penetration_detection=False,
+    )
     middleware = _make_middleware(config)
     factory = RequestFactory()
 
@@ -601,7 +645,11 @@ def test_middleware_process_response() -> None:
 
 def test_guard_with_agent_disabled() -> None:
     """Test middleware with agent disabled."""
-    config = SecurityConfig(enable_redis=False, enable_agent=False)
+    config = SecurityConfig(
+        enable_redis=False,
+        enable_agent=False,
+        enable_penetration_detection=False,
+    )
     middleware = _make_middleware(config)
     assert middleware.agent_handler is None
 

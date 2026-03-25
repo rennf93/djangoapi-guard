@@ -22,7 +22,7 @@ Main Decorator Class
 
 ```python
 from djangoapi_guard import SecurityConfig
-from djangoapi_guard.decorators import SecurityDecorator
+from djangoapi_guard import SecurityDecorator
 
 config = SecurityConfig()
 guard_deco = SecurityDecorator(config)

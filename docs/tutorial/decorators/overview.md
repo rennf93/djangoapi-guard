@@ -19,7 +19,7 @@ Security decorators are Python decorators that you can apply to your Django view
 
 ```python
 from djangoapi_guard import SecurityConfig
-from djangoapi_guard.decorators import SecurityDecorator
+from djangoapi_guard import SecurityDecorator
 from django.http import JsonResponse
 
 config = SecurityConfig()
@@ -137,7 +137,7 @@ Basic Setup
 
 ```python
 from djangoapi_guard import SecurityConfig
-from djangoapi_guard.decorators import SecurityDecorator
+from djangoapi_guard import SecurityDecorator
 from djangoapi_guard.middleware import DjangoAPIGuard
 
 config = SecurityConfig(

@@ -10,9 +10,9 @@ from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
+from guard_core.sync.handlers.behavior_handler import BehaviorRule
 
 from djangoapi_guard import SecurityConfig, SecurityDecorator
-from djangoapi_guard.handlers.behavior_handler import BehaviorRule
 
 
 @pytest.fixture

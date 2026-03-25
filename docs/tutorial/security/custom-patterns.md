@@ -16,7 +16,7 @@ Adding Custom Patterns
 -----------------------
 
 ```python
-from djangoapi_guard.handlers.suspatterns_handler import SusPatternsManager
+from djangoapi_guard import SusPatternsManager
 
 def setup_patterns():
     SusPatternsManager.add_pattern(r"malicious_pattern.*", custom=True)
@@ -60,7 +60,7 @@ Pattern Testing
 ---------------
 
 ```python
-from djangoapi_guard.utils import detect_penetration_attempt
+from guard_core.sync.utils import detect_penetration_attempt
 from django.http import JsonResponse
 
 def test_patterns(request):

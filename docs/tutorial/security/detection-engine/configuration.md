@@ -47,7 +47,7 @@ GUARD_SECURITY_CONFIG = SecurityConfig(
 ## Dynamic Configuration
 
 ```python
-from djangoapi_guard.handlers.suspatterns_handler import sus_patterns_handler
+from djangoapi_guard import sus_patterns_handler
 
 # Adjust semantic threshold dynamically
 sus_patterns_handler.configure_semantic_threshold(0.8)

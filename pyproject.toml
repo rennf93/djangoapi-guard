@@ -21,13 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "cachetools",
     "django",
-    "httpx",
-    "maxminddb",
-    "pydantic",
-    "redis",
-    "typing-extensions",
+    "guard-core>=0.1.0",
 ]
 
 [project.urls]
@@ -116,6 +111,11 @@ follow_imports = "skip"
 [[tool.mypy.overrides]]
 module = "guard_agent.*"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["guard_core", "guard_core.*", "guard_core.sync.*", "guard_core.sync.handlers.*", "guard_core.sync.protocols.*", "guard_core.sync.core.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [[tool.mypy.overrides]]
 module = "django.*"
@@ -207,9 +207,11 @@ ignore = []
 [tool.deptry]
 exclude = ["tests", ".venv", "vulture_whitelist.py", "examples", "docs"]
 extend_exclude = ["conftest.py", "setup.py"]
-known_first_party = ["djangoapi_guard"]
+known_first_party = ["djangoapi_guard", "guard_core"]
 per_rule_ignores = { "DEP001" = ["guard_agent"], "DEP002" = [
     "bandit",
+    "guard-core",
+    "httpx",
     "deptry",
     "mkdocs",
     "mkdocstrings",

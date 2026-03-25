@@ -11,7 +11,6 @@ from typing import Any, cast
 from unittest.mock import MagicMock, Mock
 
 import pytest
-from django.http import HttpRequest
 
 from djangoapi_guard import SecurityConfig, SecurityDecorator
 
@@ -144,10 +143,12 @@ def test_honeypot_form_detection(security_config: SecurityConfig) -> None:
     assert route_config is not None
     validator = route_config.custom_validators[0]
 
-    mock_request = MagicMock(spec=HttpRequest)
+    mock_request = MagicMock()
     mock_request.method = "POST"
-    mock_request.META = {"CONTENT_TYPE": "application/x-www-form-urlencoded"}
-    mock_request.POST = {"bot_trap": "filled"}
+    mock_request.headers.get = lambda key, default="": (
+        "application/x-www-form-urlencoded" if key == "content-type" else default
+    )
+    mock_request.body.return_value = b"bot_trap=filled"
 
     result = validator(mock_request)
     assert result is not None
@@ -168,10 +169,12 @@ def test_honeypot_json_exception(security_config: SecurityConfig) -> None:
     assert route_config is not None
     validator = route_config.custom_validators[0]
 
-    mock_request = MagicMock(spec=HttpRequest)
+    mock_request = MagicMock()
     mock_request.method = "POST"
-    mock_request.META = {"CONTENT_TYPE": "application/json"}
-    mock_request.body = b"invalid json {"
+    mock_request.headers.get = lambda key, default="": (
+        "application/json" if key == "content-type" else default
+    )
+    mock_request.body.return_value = b"invalid json {"
 
     result = validator(mock_request)
     assert result is None
@@ -191,10 +194,12 @@ def test_honeypot_json_detection(security_config: SecurityConfig) -> None:
     assert route_config is not None
     validator = route_config.custom_validators[0]
 
-    mock_request = MagicMock(spec=HttpRequest)
+    mock_request = MagicMock()
     mock_request.method = "POST"
-    mock_request.META = {"CONTENT_TYPE": "application/json"}
-    mock_request.body = json.dumps({"spam_check": "filled"}).encode()
+    mock_request.headers.get = lambda key, default="": (
+        "application/json" if key == "content-type" else default
+    )
+    mock_request.body.return_value = json.dumps({"spam_check": "filled"}).encode()
 
     result = validator(mock_request)
     assert result is not None

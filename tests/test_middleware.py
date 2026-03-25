@@ -8,15 +8,16 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from django.http import HttpRequest, HttpResponse
 from django.test import RequestFactory
-
-from djangoapi_guard.decorators.base import BaseSecurityDecorator
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
-from djangoapi_guard.handlers.ratelimit_handler import (
+from guard_core.decorators.base import BaseSecurityDecorator
+from guard_core.models import SecurityConfig
+from guard_core.sync.handlers.cloud_handler import cloud_handler
+from guard_core.sync.handlers.ratelimit_handler import (
     RateLimitManager,
     rate_limit_handler,
 )
+
+from djangoapi_guard.adapters import DjangoGuardRequest, DjangoGuardResponse
 from djangoapi_guard.middleware import DjangoAPIGuard
-from djangoapi_guard.models import SecurityConfig
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +31,11 @@ def reset_rate_limiter() -> Iterator[None]:
 class TestDjangoAPIGuard:
     def _make_middleware(self, config: SecurityConfig | None = None) -> DjangoAPIGuard:
         if config is None:
-            config = SecurityConfig(enable_redis=False, enable_agent=False)
+            config = SecurityConfig(
+                enable_redis=False,
+                enable_agent=False,
+                enable_penetration_detection=False,
+            )
 
         import django.conf
 
@@ -57,6 +62,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             exclude_paths=["/health"],
         )
         middleware = self._make_middleware(config)
@@ -69,6 +75,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             blacklist=["192.168.1.100"],
         )
         middleware = self._make_middleware(config)
@@ -82,6 +89,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             whitelist=["10.0.0.1"],
         )
         middleware = self._make_middleware(config)
@@ -125,6 +133,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=2,
             rate_limit_window=60,
         )
@@ -142,6 +151,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=2,
             rate_limit_window=1,
             enable_rate_limiting=True,
@@ -211,6 +221,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             enable_rate_limiting=False,
         )
         middleware = self._make_middleware(config)
@@ -226,6 +237,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=3,
             rate_limit_window=1,
             enable_rate_limiting=True,
@@ -258,6 +270,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=2,
             rate_limit_window=1,
         )
@@ -283,6 +296,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=10,
             rate_limit_window=60,
         )
@@ -305,10 +319,14 @@ class TestDjangoAPIGuard:
         request = factory.get("/")
         request.META["REMOTE_ADDR"] = client_ip
 
-        def create_error_response(status_code: int, message: str) -> HttpResponse:
-            return HttpResponse(message, status=status_code)
+        def create_error_response(
+            status_code: int, message: str
+        ) -> DjangoGuardResponse:
+            return DjangoGuardResponse(HttpResponse(message, status=status_code))
 
-        result = handler.check_rate_limit(request, client_ip, create_error_response)
+        result = handler.check_rate_limit(
+            DjangoGuardRequest(request), client_ip, create_error_response
+        )
         assert result is None
         assert len(handler.request_timestamps[client_ip]) == 1
 
@@ -316,6 +334,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             passive_mode=True,
             blacklist=["192.168.1.100"],
         )
@@ -330,6 +349,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             passive_mode=True,
             rate_limit=1,
             rate_limit_window=60,
@@ -358,14 +378,14 @@ class TestDjangoAPIGuard:
 
         with (
             patch(
-                "djangoapi_guard.core.checks.implementations.suspicious_activity.detect_penetration_patterns",
+                "guard_core.sync.core.checks.implementations.suspicious_activity.detect_penetration_patterns",
                 return_value=(True, "SQL injection attempt"),
             ),
             patch(
-                "djangoapi_guard.core.checks.implementations.suspicious_activity.log_activity"
+                "guard_core.sync.core.checks.implementations.suspicious_activity.log_activity"
             ),
             patch(
-                "djangoapi_guard.utils.detect_penetration_attempt",
+                "guard_core.sync.utils.detect_penetration_attempt",
                 return_value=(True, "SQL injection attempt"),
             ),
         ):
@@ -378,6 +398,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             blocked_user_agents=["BadBot"],
         )
         middleware = self._make_middleware(config)
@@ -391,6 +412,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             blocked_user_agents=[r"badbot"],
         )
         middleware = self._make_middleware(config)
@@ -407,14 +429,17 @@ class TestDjangoAPIGuard:
         assert response.status_code == 200
 
     def test_custom_request_check(self) -> None:
-        def custom_check(request: HttpRequest) -> HttpResponse | None:
-            if request.META.get("HTTP_X_CUSTOM_HEADER") == "block":
-                return HttpResponse("Custom block", status=403)
+        from djangoapi_guard.adapters import DjangoGuardResponse
+
+        def custom_check(request):  # type: ignore[no-untyped-def]
+            if request.headers.get("X-Custom-Header") == "block":
+                return DjangoGuardResponse(HttpResponse("Custom block", status=403))
             return None
 
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             custom_request_check=custom_check,
         )
         middleware = self._make_middleware(config)
@@ -432,13 +457,14 @@ class TestDjangoAPIGuard:
         assert response.status_code == 200
 
     def test_custom_response_modifier(self) -> None:
-        def custom_modifier(response: HttpResponse) -> HttpResponse:
-            response["X-Modified"] = "True"
+        def custom_modifier(response):  # type: ignore[no-untyped-def]
+            response.headers["X-Modified"] = "True"
             return response
 
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             custom_response_modifier=custom_modifier,
         )
         middleware = self._make_middleware(config)
@@ -451,13 +477,14 @@ class TestDjangoAPIGuard:
         assert response.status_code == 200
 
     def test_custom_response_modifier_with_blacklist(self) -> None:
-        def custom_modifier(response: HttpResponse) -> HttpResponse:
-            response["X-Modified"] = "True"
+        def custom_modifier(response):  # type: ignore[no-untyped-def]
+            response.headers["X-Modified"] = "True"
             return response
 
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             blacklist=["192.168.1.5"],
             custom_response_modifier=custom_modifier,
             trusted_proxies=["127.0.0.1"],
@@ -478,18 +505,21 @@ class TestDjangoAPIGuard:
         assert response.status_code == 403
 
     def test_custom_response_modifier_with_custom_check(self) -> None:
-        def custom_modifier(response: HttpResponse) -> HttpResponse:
-            response["X-Modified"] = "True"
+        from djangoapi_guard.adapters import DjangoGuardResponse
+
+        def custom_modifier(response):  # type: ignore[no-untyped-def]
+            response.headers["X-Modified"] = "True"
             return response
 
-        def custom_check(request: HttpRequest) -> HttpResponse | None:
-            if request.META.get("HTTP_X_CUSTOM_CHECK"):
-                return HttpResponse("I'm a teapot", status=418)
+        def custom_check(request):  # type: ignore[no-untyped-def]
+            if request.headers.get("X-Custom-Check"):
+                return DjangoGuardResponse(HttpResponse("I'm a teapot", status=418))
             return None
 
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             custom_response_modifier=custom_modifier,
             custom_request_check=custom_check,
         )
@@ -510,11 +540,12 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             custom_error_responses={403: "Custom Forbidden"},
         )
         middleware = self._make_middleware(config)
         response = middleware.create_error_response(403, "Default")
-        assert b"Custom Forbidden" in response.content
+        assert b"Custom Forbidden" in response.body
 
     def test_custom_error_responses_with_rate_limit(self) -> None:
         config = SecurityConfig(
@@ -555,6 +586,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             enable_cors=True,
             cors_allow_origins=["http://example.com"],
         )
@@ -569,6 +601,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             enable_cors=True,
             cors_allow_origins=["https://example.com"],
             cors_allow_methods=["GET", "POST"],
@@ -582,9 +615,15 @@ class TestDjangoAPIGuard:
         assert response.status_code == 204
 
     def test_cors_disabled(self) -> None:
+        from guard_core.sync.handlers.security_headers_handler import (
+            security_headers_manager,
+        )
+
+        security_headers_manager.reset()
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             enable_cors=False,
         )
         middleware = self._make_middleware(config)
@@ -599,6 +638,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             block_cloud_providers={"AWS", "GCP", "Azure"},
         )
         middleware = self._make_middleware(config)
@@ -620,6 +660,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             block_cloud_providers=None,
         )
         middleware = self._make_middleware(config)
@@ -651,6 +692,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             emergency_mode=True,
             passive_mode=True,
         )
@@ -675,6 +717,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             rate_limit=2,
             rate_limit_window=60,
             enable_rate_limiting=True,
@@ -703,6 +746,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
         )
         middleware = self._make_middleware(config)
         assert middleware.redis_handler is None
@@ -718,19 +762,19 @@ class TestDjangoAPIGuard:
         )
         with (
             patch(
-                "djangoapi_guard.handlers.redis_handler.RedisManager.initialize"
+                "guard_core.sync.handlers.redis_handler.RedisManager.initialize"
             ) as redis_init,
             patch(
-                "djangoapi_guard.handlers.cloud_handler.cloud_handler.initialize_redis"
+                "guard_core.sync.handlers.cloud_handler.cloud_handler.initialize_redis"
             ) as cloud_init,
             patch(
-                "djangoapi_guard.handlers.ipban_handler.ip_ban_manager.initialize_redis"
+                "guard_core.sync.handlers.ipban_handler.ip_ban_manager.initialize_redis"
             ) as ipban_init,
             patch(
-                "djangoapi_guard.handlers.suspatterns_handler.sus_patterns_handler.initialize_redis"
+                "guard_core.sync.handlers.suspatterns_handler.sus_patterns_handler.initialize_redis"
             ) as sus_init,
             patch(
-                "djangoapi_guard.handlers.ratelimit_handler.RateLimitManager.initialize_redis"
+                "guard_core.sync.handlers.ratelimit_handler.RateLimitManager.initialize_redis"
             ) as rate_init,
         ):
             self._make_middleware(config)
@@ -749,19 +793,19 @@ class TestDjangoAPIGuard:
         )
         with (
             patch(
-                "djangoapi_guard.handlers.redis_handler.RedisManager.initialize"
+                "guard_core.sync.handlers.redis_handler.RedisManager.initialize"
             ) as redis_init,
             patch(
-                "djangoapi_guard.handlers.cloud_handler.cloud_handler.initialize_redis"
+                "guard_core.sync.handlers.cloud_handler.cloud_handler.initialize_redis"
             ) as cloud_init,
             patch(
-                "djangoapi_guard.handlers.ipban_handler.ip_ban_manager.initialize_redis"
+                "guard_core.sync.handlers.ipban_handler.ip_ban_manager.initialize_redis"
             ) as ipban_init,
             patch(
-                "djangoapi_guard.handlers.suspatterns_handler.sus_patterns_handler.initialize_redis"
+                "guard_core.sync.handlers.suspatterns_handler.sus_patterns_handler.initialize_redis"
             ) as sus_init,
             patch(
-                "djangoapi_guard.handlers.ratelimit_handler.RateLimitManager.initialize_redis"
+                "guard_core.sync.handlers.ratelimit_handler.RateLimitManager.initialize_redis"
             ) as rate_init,
         ):
             self._make_middleware(config)
@@ -816,7 +860,7 @@ class TestDjangoAPIGuard:
             agent_api_key="test-key",
         )
         with patch(
-            "djangoapi_guard.models.SecurityConfig.to_agent_config",
+            "guard_core.models.SecurityConfig.to_agent_config",
             return_value=None,
         ):
             middleware = self._make_middleware(config)
@@ -826,6 +870,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
         )
         middleware = self._make_middleware(config)
         factory = RequestFactory()
@@ -842,6 +887,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
         )
         middleware = self._make_middleware(config)
 
@@ -862,6 +908,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             security_headers={"enabled": False},
         )
         middleware = self._make_middleware(config)
@@ -877,6 +924,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             security_headers=None,
         )
         middleware = self._make_middleware(config)
@@ -1053,7 +1101,7 @@ class TestDjangoAPIGuard:
 
     def _make_redis_middleware(self, config: SecurityConfig) -> DjangoAPIGuard:
         with patch(
-            "djangoapi_guard.core.initialization.handler_initializer.HandlerInitializer.initialize_redis_handlers"
+            "guard_core.sync.core.initialization.handler_initializer.HandlerInitializer.initialize_redis_handlers"
         ):
             return self._make_middleware(config)
 
@@ -1087,10 +1135,15 @@ class TestDjangoAPIGuard:
         request = factory.get("/")
         request.META["REMOTE_ADDR"] = "192.168.1.1"
 
-        def create_error_response(status_code: int, message: str) -> HttpResponse:
-            return HttpResponse(message, status=status_code)
+        def create_error_response(
+            status_code: int, message: str
+        ) -> DjangoGuardResponse:
+            return DjangoGuardResponse(HttpResponse(message, status=status_code))
 
-        result = handler.check_rate_limit(request, "192.168.1.1", create_error_response)
+        guard_request = DjangoGuardRequest(request)
+        result = handler.check_rate_limit(
+            guard_request, "192.168.1.1", create_error_response
+        )
         assert result is None
 
         mock_conn.evalsha.assert_called_once()
@@ -1098,7 +1151,9 @@ class TestDjangoAPIGuard:
         mock_conn.evalsha.reset_mock()
         mock_conn.evalsha.return_value = 3
 
-        result = handler.check_rate_limit(request, "192.168.1.1", create_error_response)
+        result = handler.check_rate_limit(
+            guard_request, "192.168.1.1", create_error_response
+        )
         assert result is not None
         assert result.status_code == 429
 
@@ -1143,10 +1198,15 @@ class TestDjangoAPIGuard:
         request = factory.get("/")
         request.META["REMOTE_ADDR"] = "192.168.1.1"
 
-        def create_error_response(status_code: int, message: str) -> HttpResponse:
-            return HttpResponse(message, status=status_code)
+        def create_error_response(
+            status_code: int, message: str
+        ) -> DjangoGuardResponse:
+            return DjangoGuardResponse(HttpResponse(message, status=status_code))
 
-        result = handler.check_rate_limit(request, "192.168.1.1", create_error_response)
+        guard_request = DjangoGuardRequest(request)
+        result = handler.check_rate_limit(
+            guard_request, "192.168.1.1", create_error_response
+        )
         assert result is None
 
         mock_conn.pipeline.assert_called_once()
@@ -1163,10 +1223,12 @@ class TestDjangoAPIGuard:
         mock_pipeline.expire.reset_mock()
         mock_pipeline.execute.reset_mock()
 
-        result = handler.check_rate_limit(request, "192.168.1.1", create_error_response)
+        result = handler.check_rate_limit(
+            guard_request, "192.168.1.1", create_error_response
+        )
         assert result is not None
         assert result.status_code == 429
-        assert result.content == b"Too many requests"
+        assert result.body == b"Too many requests"
 
         mock_conn.pipeline.assert_called_once()
         mock_pipeline.zadd.assert_called_once()
@@ -1192,8 +1254,10 @@ class TestDjangoAPIGuard:
         mock_redis_handler.config = config
         handler.redis_handler = mock_redis_handler
 
-        def create_error_response(status_code: int, message: str) -> HttpResponse:
-            return HttpResponse(message, status=status_code)
+        def create_error_response(
+            status_code: int, message: str
+        ) -> DjangoGuardResponse:
+            return DjangoGuardResponse(HttpResponse(message, status=status_code))
 
         with (
             patch.object(mock_redis_handler, "get_connection") as mock_get_connection,
@@ -1213,7 +1277,7 @@ class TestDjangoAPIGuard:
             request.META["REMOTE_ADDR"] = "192.168.1.1"
 
             result = handler.check_rate_limit(
-                request, "192.168.1.1", create_error_response
+                DjangoGuardRequest(request), "192.168.1.1", create_error_response
             )
             assert result is None
 
@@ -1234,7 +1298,7 @@ class TestDjangoAPIGuard:
             request.META["REMOTE_ADDR"] = "192.168.1.1"
 
             result = handler.check_rate_limit(
-                request, "192.168.1.1", create_error_response
+                DjangoGuardRequest(request), "192.168.1.1", create_error_response
             )
             assert result is None
 
@@ -1302,6 +1366,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             enforce_https=True,
         )
         middleware = self._make_middleware(config)
@@ -1316,6 +1381,7 @@ class TestDjangoAPIGuard:
         config = SecurityConfig(
             enable_redis=False,
             enable_agent=False,
+            enable_penetration_detection=False,
             exclude_paths=["/health", "/status", "/metrics"],
         )
         middleware = self._make_middleware(config)
@@ -1325,3 +1391,463 @@ class TestDjangoAPIGuard:
             request = factory.get(path)
             response = middleware(request)
             assert response.status_code == 200
+
+
+class TestDjangoAPIGuardCoverage:
+    def _make_middleware(self, config: SecurityConfig | None = None) -> DjangoAPIGuard:
+        if config is None:
+            config = SecurityConfig(
+                enable_redis=False, enable_penetration_detection=False
+            )
+
+        import django.conf
+
+        django.conf.settings.GUARD_SECURITY_CONFIG = config
+
+        def get_response(request: HttpRequest) -> HttpResponse:
+            return HttpResponse("OK")
+
+        return DjangoAPIGuard(get_response)
+
+    def test_config_default_from_settings(self) -> None:
+        import django.conf
+
+        django.conf.settings.GUARD_SECURITY_CONFIG = None
+        middleware = DjangoAPIGuard(lambda r: HttpResponse("OK"))
+        assert middleware.config is not None
+
+    def test_guard_response_factory_property(self) -> None:
+        from djangoapi_guard.adapters import DjangoResponseFactory
+
+        middleware = self._make_middleware()
+        assert isinstance(middleware.guard_response_factory, DjangoResponseFactory)
+
+    def test_geo_ip_handler_init(self) -> None:
+        from pathlib import Path
+
+        from guard_core.sync.handlers.ipinfo_handler import IPInfoManager
+
+        handler = IPInfoManager("fake", Path("/tmp/test.mmdb"))
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            blocked_countries=["CN"],
+            geo_ip_handler=handler,
+        )
+        middleware = self._make_middleware(config)
+        assert middleware.geo_ip_handler is not None
+
+    def test_security_headers_not_configured(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            security_headers=None,
+        )
+        self._make_middleware(config)
+
+    def test_security_headers_disabled(self) -> None:
+        from guard_core.sync.handlers.security_headers_handler import (
+            security_headers_manager,
+        )
+
+        security_headers_manager.reset()
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            security_headers={"enabled": False},
+        )
+        self._make_middleware(config)
+
+    def test_assert_initialized_bypass_handler_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.bypass_handler = None
+        with pytest.raises(RuntimeError, match="bypass_handler"):
+            middleware._assert_initialized()
+
+    def test_assert_initialized_route_resolver_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.route_resolver = None
+        with pytest.raises(RuntimeError, match="route_resolver"):
+            middleware._assert_initialized()
+
+    def test_assert_initialized_behavioral_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._assert_initialized()
+
+    def test_assert_initialized_response_factory_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware._assert_initialized()
+
+    def test_populate_guard_state_with_view_class(self) -> None:
+        middleware = self._make_middleware()
+        request = HttpRequest()
+        request.path = "/test"
+        request.META["SERVER_NAME"] = "localhost"
+        request.META["SERVER_PORT"] = "80"
+
+        mock_view = Mock()
+        mock_view.view_class = Mock()
+        mock_view.view_class._guard_route_id = "test_id"
+        mock_view.view_class.__module__ = "test_module"
+        mock_view.view_class.__qualname__ = "TestView"
+
+        mock_match = Mock()
+        mock_match.func = mock_view
+
+        guard_request = DjangoGuardRequest(request)
+        with patch("django.urls.resolve", return_value=mock_match):
+            middleware._populate_guard_state(guard_request, request)
+        assert request.guard_route_id == "test_id"
+        assert request.guard_endpoint_id == "test_module.TestView"
+
+    def test_call_passthrough_response(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        mock_resp = DjangoGuardResponse(HttpResponse("pass", status=200))
+        with patch.object(
+            middleware.bypass_handler,
+            "handle_passthrough",
+            return_value=mock_resp,
+        ):
+            response = middleware(request)
+            assert response.content == b"pass"
+
+    def test_call_bypass_response(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        mock_resp = DjangoGuardResponse(HttpResponse("bypass", status=403))
+        with (
+            patch.object(
+                middleware.bypass_handler,
+                "handle_passthrough",
+                return_value=None,
+            ),
+            patch.object(
+                middleware.bypass_handler,
+                "handle_security_bypass",
+                return_value=mock_resp,
+            ),
+        ):
+            response = middleware(request)
+            assert response.status_code == 403
+
+    def test_call_pipeline_blocks(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        with patch.object(
+            middleware,
+            "_execute_security_pipeline",
+            return_value=HttpResponse("blocked", status=403),
+        ):
+            response = middleware(request)
+            assert response.status_code == 403
+
+    def test_agent_init_with_mock_module(self) -> None:
+        mock_agent = MagicMock()
+        mock_module = MagicMock()
+        mock_module.guard_agent = MagicMock(return_value=mock_agent)
+        mock_config = MagicMock()
+
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            enable_agent=True,
+            agent_api_key="test-key-long-enough-for-validation",
+            agent_model="claude-sonnet-4-20250514",
+        )
+        with (
+            patch.object(
+                SecurityConfig,
+                "to_agent_config",
+                return_value=mock_config,
+            ),
+            patch.dict(sys.modules, {"guard_agent": mock_module}),
+        ):
+            middleware = self._make_middleware(config)
+            assert middleware.agent_handler is mock_agent
+
+    def test_agent_init_import_blocked(self) -> None:
+        import builtins
+
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            enable_agent=True,
+            agent_api_key="test-key-long-enough-for-validation",
+            agent_model="claude-sonnet-4-20250514",
+        )
+        fake_agent_config = config.to_agent_config()
+        original_import = builtins.__import__
+        saved_modules = {
+            k: sys.modules.pop(k)
+            for k in list(sys.modules)
+            if k.startswith("guard_agent")
+        }
+
+        def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:
+            if name == "guard_agent":
+                raise ImportError("No module")
+            return original_import(name, *args, **kwargs)
+
+        try:
+            with (
+                patch.object(
+                    SecurityConfig,
+                    "to_agent_config",
+                    return_value=fake_agent_config,
+                ),
+                patch(
+                    "builtins.__import__",
+                    side_effect=mock_import,
+                ),
+            ):
+                middleware = self._make_middleware(config)
+                assert middleware.agent_handler is None
+        finally:
+            sys.modules.update(saved_modules)
+
+    def test_agent_init_runtime_error(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            enable_agent=True,
+            agent_api_key="test-key-long-enough-for-validation",
+            agent_model="claude-sonnet-4-20250514",
+        )
+        mock_module = MagicMock()
+        mock_module.guard_agent = MagicMock(side_effect=RuntimeError("init failed"))
+        mock_config = MagicMock()
+
+        with (
+            patch.object(
+                SecurityConfig,
+                "to_agent_config",
+                return_value=mock_config,
+            ),
+            patch.dict(sys.modules, {"guard_agent": mock_module}),
+        ):
+            middleware = self._make_middleware(config)
+            assert middleware.agent_handler is None
+
+    def test_agent_init_config_returns_none(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            enable_agent=True,
+            agent_api_key="test-key-long-enough-for-validation",
+            agent_model="claude-sonnet-4-20250514",
+        )
+        with patch.object(SecurityConfig, "to_agent_config", return_value=None):
+            middleware = self._make_middleware(config)
+            assert middleware.agent_handler is None
+
+    def test_check_rate_limit_returns_response(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        mock_resp = DjangoGuardResponse(HttpResponse("Rate limited", status=429))
+        with patch.object(
+            middleware.rate_limit_handler,
+            "check_rate_limit",
+            return_value=mock_resp,
+        ):
+            result = middleware._check_rate_limit(request, "127.0.0.1")
+            assert result is not None
+            assert result.status_code == 429
+
+    def test_check_rate_limit_allows_request(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+
+        with patch.object(
+            middleware.rate_limit_handler,
+            "check_rate_limit",
+            return_value=None,
+        ):
+            result = middleware._check_rate_limit(request, "127.0.0.1")
+            assert result is None
+
+    def test_process_response_method(self) -> None:
+        middleware = self._make_middleware()
+        factory = RequestFactory()
+        request = factory.get("/")
+        response = HttpResponse("OK")
+
+        result = middleware._process_response(request, response, 0.01, None)
+        assert result.status_code == 200
+
+    def test_refresh_cloud_ip_ranges(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_penetration_detection=False,
+            block_cloud_providers={"AWS"},
+        )
+        middleware = self._make_middleware(config)
+        middleware.last_cloud_ip_refresh = 0
+        with patch.object(cloud_handler, "refresh"):
+            middleware.refresh_cloud_ip_ranges()
+        assert middleware.last_cloud_ip_refresh > 0
+
+    def test_create_error_response(self) -> None:
+        middleware = self._make_middleware()
+        result = middleware.create_error_response(403, "Forbidden")
+        assert result.status_code == 403
+
+    def test_adapter_scope(self) -> None:
+        request = HttpRequest()
+        request.META["SERVER_NAME"] = "localhost"
+        guard_request = DjangoGuardRequest(request)
+        assert "META" in guard_request.scope
+
+    def test_adapter_url_replace_scheme_https(self) -> None:
+        from djangoapi_guard.adapters import DjangoGuardRequest as DGR
+
+        mock_request = MagicMock()
+        mock_request.build_absolute_uri.return_value = "https://example.com/test"
+        guard_request = DGR(mock_request)
+        result = guard_request.url_replace_scheme("wss")
+        assert result.startswith("wss://")
+
+    def test_adapter_url_replace_scheme_unknown(self) -> None:
+        from djangoapi_guard.adapters import DjangoGuardRequest as DGR
+
+        mock_request = MagicMock()
+        mock_request.build_absolute_uri.return_value = "ftp://example.com/test"
+        guard_request = DGR(mock_request)
+        result = guard_request.url_replace_scheme("wss")
+        assert result == "ftp://example.com/test"
+
+    def test_adapter_headers_contains(self) -> None:
+        from djangoapi_guard.adapters import DjangoHeadersMapping
+
+        mapping = DjangoHeadersMapping({"HTTP_HOST": "localhost"})
+        assert 123 not in mapping
+        assert "Host" in mapping
+        assert "Missing" not in mapping
+
+    def test_init_routing_event_bus_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.event_bus = None
+        with pytest.raises(RuntimeError, match="event_bus"):
+            middleware._init_routing_and_validation()
+
+    def test_init_routing_response_factory_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware._init_routing_and_validation()
+
+    def test_process_behavioral_usage_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._process_behavioral_usage(
+                DjangoGuardRequest(HttpRequest()), "127.0.0.1", None
+            )
+
+    def test_finalize_response_factory_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware._finalize_response(HttpRequest(), HttpResponse(), None)
+
+    def test_finalize_response_behavioral_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._finalize_response(HttpRequest(), HttpResponse(), None)
+
+    def test_initialize_handlers_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.handler_initializer = None
+        with pytest.raises(RuntimeError, match="handler_initializer"):
+            middleware._initialize_handlers()
+
+    def test_handle_preflight_factory_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware._handle_preflight(HttpRequest())
+
+    def test_check_time_window_validator_none(self) -> None:
+        middleware = self._make_middleware()
+        middleware.validator = None
+        with pytest.raises(RuntimeError, match="validator"):
+            middleware._check_time_window({"start": "09:00", "end": "17:00"})
+
+    def test_process_response_guards(self) -> None:
+        middleware = self._make_middleware()
+        req = HttpRequest()
+        resp = HttpResponse()
+
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware._process_response(req, resp, 0.01, None)
+
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._process_response(req, resp, 0.01, None)
+
+    def test_decorator_usage_rules_guard(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._process_decorator_usage_rules(
+                HttpRequest(), "127.0.0.1", Mock()
+            )
+
+    def test_decorator_return_rules_guard(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._process_decorator_return_rules(
+                HttpRequest(), HttpResponse(), "127.0.0.1", Mock()
+            )
+
+    def test_get_endpoint_id_guard(self) -> None:
+        middleware = self._make_middleware()
+        middleware.behavioral_processor = None
+        with pytest.raises(RuntimeError, match="behavioral_processor"):
+            middleware._get_endpoint_id(HttpRequest())
+
+    def test_create_error_response_guard(self) -> None:
+        middleware = self._make_middleware()
+        middleware.response_factory = None
+        with pytest.raises(RuntimeError, match="response_factory"):
+            middleware.create_error_response(403, "Forbidden")
+
+    def test_behavioral_usage_with_rules(self) -> None:
+        from guard_core.sync.decorators.base import RouteConfig
+
+        middleware = self._make_middleware()
+        route_config = RouteConfig()
+        route_config.behavior_rules = [Mock()]
+
+        guard_request = DjangoGuardRequest(HttpRequest())
+        with patch.object(middleware.behavioral_processor, "process_usage_rules"):
+            middleware._process_behavioral_usage(
+                guard_request, "127.0.0.1", route_config
+            )
+
+    def test_adapter_headers_iter_and_len(self) -> None:
+        from djangoapi_guard.adapters import DjangoHeadersMapping
+
+        mapping = DjangoHeadersMapping(
+            {"HTTP_HOST": "localhost", "HTTP_ACCEPT": "text/html"}
+        )
+        keys = list(mapping)
+        assert len(keys) == 2
+        assert len(mapping) == 2

@@ -113,8 +113,8 @@ Example: Custom Geo IP Service
 Here's a complete example of a custom GeoIPHandler implementation that uses a different service:
 
 ```python
-from djangoapi_guard.protocols.geo_ip_protocol import GeoIPHandler
-from djangoapi_guard.protocols.redis_protocol import RedisHandlerProtocol
+from djangoapi_guard import GeoIPHandler
+from djangoapi_guard import RedisHandlerProtocol
 
 class CustomGeoIPHandler:
     """Custom handler using Custom GeoIP database"""
@@ -180,7 +180,7 @@ Usage in Application
 
 ```python
 # settings.py
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import SecurityConfig
 from your_custom_module import CustomGeoIPHandler
 
 # Use custom handler instead of default IPInfoManager

@@ -4,11 +4,10 @@ from typing import Any
 
 import pytest
 from django.test import RequestFactory
-
-from djangoapi_guard.handlers.ipban_handler import ip_ban_manager
-from djangoapi_guard.handlers.security_headers_handler import security_headers_manager
-from djangoapi_guard.handlers.suspatterns_handler import sus_patterns_handler
-from djangoapi_guard.models import SecurityConfig
+from guard_core.models import SecurityConfig
+from guard_core.sync.handlers.ipban_handler import ip_ban_manager
+from guard_core.sync.handlers.security_headers_handler import security_headers_manager
+from guard_core.sync.handlers.suspatterns_handler import sus_patterns_handler
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.settings")
 
@@ -23,6 +22,7 @@ def security_config() -> SecurityConfig:
     return SecurityConfig(
         enable_redis=False,
         enable_agent=False,
+        enable_penetration_detection=False,
     )
 
 

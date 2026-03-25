@@ -36,7 +36,7 @@ The example app is built using Django and shows how to integrate DjangoAPI Guard
 
 ```python
 # settings.py
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import SecurityConfig
 
 # Configure DjangoAPI Guard
 GUARD_SECURITY_CONFIG = SecurityConfig(

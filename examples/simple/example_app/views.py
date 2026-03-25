@@ -9,8 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from djangoapi_guard import SecurityConfig, SecurityDecorator, ip_ban_manager
-from djangoapi_guard.handlers.behavior_handler import BehaviorRule
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import BehaviorRule, cloud_handler
 
 logging.basicConfig(
     level=logging.INFO,

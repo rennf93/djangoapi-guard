@@ -102,7 +102,7 @@ Basic Setup
 
 ```python
 # settings.py
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import SecurityConfig
 
 GUARD_SECURITY_CONFIG = SecurityConfig(
     rate_limit=100,
@@ -120,8 +120,8 @@ With Decorators
 ---------------
 
 ```python
-from djangoapi_guard.decorators import SecurityDecorator
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import SecurityDecorator
+from djangoapi_guard import SecurityConfig
 
 config = SecurityConfig(rate_limit=100)
 guard_deco = SecurityDecorator(config)
