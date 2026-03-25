@@ -420,22 +420,6 @@ class DjangoAPIGuard:
         result: bool = check_user_agent_allowed(user_agent, route_config, self.config)
         return result
 
-    def _check_rate_limit(
-        self,
-        request: HttpRequest,
-        client_ip: str,
-        route_config: RouteConfig | None = None,
-    ) -> HttpResponse | None:
-        guard_request = DjangoGuardRequest(request)
-        result = self.rate_limit_handler.check_rate_limit(
-            guard_request, client_ip, self.create_error_response
-        )
-        if result and self.config.passive_mode:
-            return None
-        if result:
-            return unwrap_response(result)
-        return None
-
     def _process_response(
         self,
         request: HttpRequest,

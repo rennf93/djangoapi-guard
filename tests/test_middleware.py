@@ -363,9 +363,6 @@ class TestDjangoAPIGuard:
         response = middleware(request)
         assert response.status_code == 200
 
-        result = middleware._check_rate_limit(request, "127.0.0.1")
-        assert result is None
-
     def test_passive_mode_penetration_detection(self) -> None:
         config = SecurityConfig(
             enable_redis=False,
@@ -1650,34 +1647,6 @@ class TestDjangoAPIGuardCoverage:
         with patch.object(SecurityConfig, "to_agent_config", return_value=None):
             middleware = self._make_middleware(config)
             assert middleware.agent_handler is None
-
-    def test_check_rate_limit_returns_response(self) -> None:
-        middleware = self._make_middleware()
-        factory = RequestFactory()
-        request = factory.get("/")
-
-        mock_resp = DjangoGuardResponse(HttpResponse("Rate limited", status=429))
-        with patch.object(
-            middleware.rate_limit_handler,
-            "check_rate_limit",
-            return_value=mock_resp,
-        ):
-            result = middleware._check_rate_limit(request, "127.0.0.1")
-            assert result is not None
-            assert result.status_code == 429
-
-    def test_check_rate_limit_allows_request(self) -> None:
-        middleware = self._make_middleware()
-        factory = RequestFactory()
-        request = factory.get("/")
-
-        with patch.object(
-            middleware.rate_limit_handler,
-            "check_rate_limit",
-            return_value=None,
-        ):
-            result = middleware._check_rate_limit(request, "127.0.0.1")
-            assert result is None
 
     def test_process_response_method(self) -> None:
         middleware = self._make_middleware()
