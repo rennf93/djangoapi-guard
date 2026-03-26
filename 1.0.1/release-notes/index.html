@@ -2450,7 +2450,7 @@
 <h2 id="v200-2026-03-26">v2.0.0 (2026-03-26)<a class="headerlink" href="#v200-2026-03-26" title="Permanent link">&para;</a></h2>
 <h2 id="major-release-v200">Major Release (v2.0.0)<a class="headerlink" href="#major-release-v200" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Guard-Core migration</strong>: DjAPI Guard is now a thin adapter over <a href="https://github.com/rennf93/guard-core">guard-core</a>, the framework-agnostic security engine. All security logic (17 checks, 8 handlers, detection engine) lives in guard-core; this package provides only the Django integration layer.</li>
+<li><strong>Guard-Core migration</strong>: DjangoAPI Guard is now a thin adapter over <a href="https://github.com/rennf93/guard-core">guard-core</a>, the framework-agnostic security engine. All security logic (17 checks, 8 handlers, detection engine) lives in guard-core; this package provides only the Django integration layer.</li>
 <li><strong>Production/Stable status</strong>: Development status upgraded from Alpha to Production/Stable.</li>
 <li><strong>Zero breaking changes to public API</strong>: All existing imports (<code>from djangoapi_guard import SecurityConfig</code>, <code>from djangoapi_guard import DjangoAPIGuard</code>, etc.) continue to work exactly as before.</li>
 <li><strong>Shared engine across frameworks</strong>: The same security engine now powers <a href="https://github.com/rennf93/fastapi-guard">fastapi-guard</a> and <a href="https://github.com/rennf93/flaskapi-guard">flaskapi-guard</a>, ensuring consistent security behavior across all three frameworks.</li>
