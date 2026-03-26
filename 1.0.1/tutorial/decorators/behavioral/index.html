@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -2448,7 +2448,7 @@
 <p>Behavioral analysis decorators provide advanced monitoring capabilities to detect suspicious usage patterns and potential abuse.</p>
 <hr />
 <h2 id="usage-monitoring">Usage Monitoring<a class="headerlink" href="#usage-monitoring" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">djangoapi_guard.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecurityDecorator</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">djangoapi_guard</span><span class="w"> </span><span class="kn">import</span> <span class="n">SecurityDecorator</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">django.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">JsonResponse</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">guard_deco</span> <span class="o">=</span> <span class="n">SecurityDecorator</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
@@ -2482,7 +2482,7 @@
 </ul>
 <hr />
 <h2 id="complex-behavioral-analysis">Complex Behavioral Analysis<a class="headerlink" href="#complex-behavioral-analysis" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">djangoapi_guard.handlers.behavior_handler</span><span class="w"> </span><span class="kn">import</span> <span class="n">BehaviorRule</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">djangoapi_guard</span><span class="w"> </span><span class="kn">import</span> <span class="n">BehaviorRule</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">rules</span> <span class="o">=</span> <span class="p">[</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">BehaviorRule</span><span class="p">(</span><span class="s2">&quot;usage&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="mi">3600</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;alert&quot;</span><span class="p">),</span>
