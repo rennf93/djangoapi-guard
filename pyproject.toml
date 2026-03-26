@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "django",
-    "guard-core>=0.1.0",
+    "guard-core",
 ]
 
 [project.urls]
