@@ -40,7 +40,7 @@ Custom Detection Logic
 ----------------------
 
 ```python
-from djangoapi_guard.utils import detect_penetration_attempt
+from guard_core.sync.utils import detect_penetration_attempt
 from django.http import JsonResponse
 
 def submit_data(request):

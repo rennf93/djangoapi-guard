@@ -16,7 +16,7 @@ Usage Monitoring
 ----------------
 
 ```python
-from djangoapi_guard.decorators import SecurityDecorator
+from djangoapi_guard import SecurityDecorator
 from django.http import JsonResponse
 
 guard_deco = SecurityDecorator(config)
@@ -62,7 +62,7 @@ Complex Behavioral Analysis
 ---------------------------
 
 ```python
-from djangoapi_guard.handlers.behavior_handler import BehaviorRule
+from djangoapi_guard import BehaviorRule
 
 rules = [
     BehaviorRule("usage", threshold=20, window=3600, action="alert"),

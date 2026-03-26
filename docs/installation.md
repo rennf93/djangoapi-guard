@@ -37,8 +37,8 @@ Note: The IPInfo token is only required when using the country filtering feature
 
 ```python
 # settings.py
-from djangoapi_guard.models import SecurityConfig
-from djangoapi_guard.handlers.ipinfo_handler import IPInfoManager
+from djangoapi_guard import SecurityConfig
+from djangoapi_guard import IPInfoManager
 
 GUARD_SECURITY_CONFIG = SecurityConfig(
     geo_ip_handler=IPInfoManager("your_ipinfo_token_here"),  # NOTE: Required when using country blocking

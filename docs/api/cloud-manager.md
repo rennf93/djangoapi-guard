@@ -29,7 +29,7 @@ Usage Example
 -------------
 
 ```python
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import cloud_handler
 
 is_cloud = cloud_handler.is_cloud_ip("35.186.224.25", {"AWS", "GCP", "Azure"})
 cloud_handler.refresh()

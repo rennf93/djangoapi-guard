@@ -47,7 +47,7 @@ GUARD_SECURITY_CONFIG = SecurityConfig(
 You can also manually trigger a refresh:
 
 ```python
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import cloud_handler
 cloud_handler.refresh()
 ```
 
@@ -57,7 +57,7 @@ Provider Status
 ---------------
 
 ```python
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import cloud_handler
 
 for provider in ("AWS", "GCP", "Azure"):
     updated = cloud_handler.last_updated[provider]
@@ -71,7 +71,7 @@ Custom IP Checking
 -------------------
 
 ```python
-from djangoapi_guard.handlers.cloud_handler import cloud_handler
+from djangoapi_guard import cloud_handler
 from django.http import JsonResponse
 
 def check_cloud_ip(request, ip):

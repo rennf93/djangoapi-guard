@@ -5,7 +5,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from advanced_app.models import message_response
 from advanced_app.security import guard
-from djangoapi_guard.handlers.behavior_handler import BehaviorRule
+from djangoapi_guard import BehaviorRule
 
 
 @require_GET

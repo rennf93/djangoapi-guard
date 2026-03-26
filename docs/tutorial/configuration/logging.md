@@ -108,7 +108,7 @@ Custom Logger
 The `setup_custom_logging` function is automatically called by the middleware during initialization:
 
 ```python
-from djangoapi_guard.utils import setup_custom_logging
+from guard_core.sync.utils import setup_custom_logging
 
 # Manual setup (if needed outside of middleware)
 # Console only (no file)

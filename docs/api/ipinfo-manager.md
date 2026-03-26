@@ -29,7 +29,7 @@ Usage Example
 -------------
 
 ```python
-from djangoapi_guard.handlers.ipinfo_handler import IPInfoManager
+from djangoapi_guard import IPInfoManager
 
 ipinfo_db = IPInfoManager(token="your_token")
 ipinfo_db.initialize()

@@ -48,19 +48,19 @@ Key Classes and Instances
 ```python
 # Core middleware and configuration
 from djangoapi_guard.middleware import DjangoAPIGuard
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard import SecurityConfig
 
 # Security decorators
-from djangoapi_guard.decorators import SecurityDecorator, RouteConfig
+from djangoapi_guard import SecurityDecorator, RouteConfig
 
 # Handler classes and their pre-initialized instances
-from djangoapi_guard.handlers.cloud_handler import CloudManager, cloud_handler
-from djangoapi_guard.handlers.ipban_handler import IPBanManager, ip_ban_manager
-from djangoapi_guard.handlers.ratelimit_handler import RateLimitManager, rate_limit_handler
-from djangoapi_guard.handlers.redis_handler import RedisManager, redis_handler
-from djangoapi_guard.handlers.suspatterns_handler import SusPatternsManager, sus_patterns_handler
-from djangoapi_guard.handlers.behavior_handler import BehaviorTracker, BehaviorRule
+from djangoapi_guard import CloudManager, cloud_handler
+from djangoapi_guard import IPBanManager, ip_ban_manager
+from djangoapi_guard import RateLimitManager, rate_limit_handler
+from djangoapi_guard import RedisManager, redis_handler
+from djangoapi_guard import SusPatternsManager, sus_patterns_handler
+from djangoapi_guard import BehaviorTracker, BehaviorRule
 
 # Special case - requires parameters
-from djangoapi_guard.handlers.ipinfo_handler import IPInfoManager
+from djangoapi_guard import IPInfoManager
 ```

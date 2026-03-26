@@ -32,7 +32,7 @@ Manual IP Banning
 You can also manually ban IPs using the `IPBanManager`:
 
 ```python
-from djangoapi_guard.handlers.ipban_handler import ip_ban_manager
+from djangoapi_guard import ip_ban_manager
 from django.http import JsonResponse
 
 def ban_ip(request, ip):

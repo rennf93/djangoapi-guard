@@ -13,9 +13,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.test import RequestFactory
+from guard_core.models import SecurityConfig
+from guard_core.sync.decorators.base import BaseSecurityDecorator
 
-from djangoapi_guard.decorators.base import BaseSecurityDecorator
-from djangoapi_guard.models import SecurityConfig
+from djangoapi_guard.adapters import DjangoGuardRequest
 
 
 def _install_mock_guard_agent() -> types.ModuleType:
@@ -67,12 +68,12 @@ class TestDecoratorEvents:
         )
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="127.0.0.1",
         ):
             decorator.send_decorator_event(
                 event_type="test_event",
-                request=request,
+                request=DjangoGuardRequest(request),
                 action_taken="blocked",
                 reason="test reason",
                 decorator_type="test_decorator",
@@ -99,7 +100,7 @@ class TestDecoratorEvents:
 
         decorator.send_decorator_event(
             event_type="test",
-            request=request,
+            request=DjangoGuardRequest(request),
             action_taken="blocked",
             reason="test",
             decorator_type="test",
@@ -115,12 +116,12 @@ class TestDecoratorEvents:
         request = rf.get("/test")
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="127.0.0.1",
         ):
             decorator.send_decorator_event(
                 event_type="test",
-                request=request,
+                request=DjangoGuardRequest(request),
                 action_taken="blocked",
                 reason="test",
                 decorator_type="test",
@@ -135,11 +136,11 @@ class TestDecoratorEvents:
         request = rf.get("/secure")
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="1.2.3.4",
         ):
             decorator.send_access_denied_event(
-                request=request,
+                request=DjangoGuardRequest(request),
                 reason="IP blocked",
                 decorator_type="access_control",
                 source_ip="1.2.3.4",
@@ -161,11 +162,11 @@ class TestDecoratorEvents:
         request = rf.get("/auth")
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="127.0.0.1",
         ):
             decorator.send_authentication_failed_event(
-                request=request,
+                request=DjangoGuardRequest(request),
                 reason="Invalid API key",
                 auth_type="api_key",
             )
@@ -186,11 +187,11 @@ class TestDecoratorEvents:
         request = rf.get("/api/data")
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="127.0.0.1",
         ):
             decorator.send_rate_limit_event(
-                request=request,
+                request=DjangoGuardRequest(request),
                 limit=100,
                 window=60,
             )
@@ -213,11 +214,11 @@ class TestDecoratorEvents:
         request = rf.get("/admin")
 
         with patch(
-            "djangoapi_guard.utils.extract_client_ip",
+            "guard_core.sync.utils.extract_client_ip",
             return_value="127.0.0.1",
         ):
             decorator.send_decorator_violation_event(
-                request=request,
+                request=DjangoGuardRequest(request),
                 violation_type="content_filter",
                 reason="Invalid content type",
             )

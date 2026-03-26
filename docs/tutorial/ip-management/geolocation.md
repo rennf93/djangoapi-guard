@@ -22,7 +22,7 @@ class GeoIPHandler(Protocol):
 It provides an implementation that uses the [ipinfo.io](https://ipinfo.io/signup) service:
 
 ```python
-from djangoapi_guard.handlers.ipinfo_handler import IPInfoManager
+from djangoapi_guard import IPInfoManager
 ```
 
 ___
@@ -89,7 +89,7 @@ Custom Geolocation Logic
 ------------------------
 
 ```python
-from djangoapi_guard.handlers.ipinfo_handler import IPInfoManager
+from djangoapi_guard import IPInfoManager
 from django.http import JsonResponse
 
 ipinfo_db = IPInfoManager(token="your_ipinfo_token_here")

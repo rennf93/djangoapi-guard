@@ -3,7 +3,7 @@
 ## Performance Metrics
 
 ```python
-from djangoapi_guard.handlers.suspatterns_handler import sus_patterns_handler
+from djangoapi_guard import sus_patterns_handler
 
 stats = sus_patterns_handler.get_performance_stats()
 print(f"Average execution time: {stats['summary']['average_time']}s")

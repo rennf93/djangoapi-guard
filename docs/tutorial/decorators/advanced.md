@@ -16,7 +16,7 @@ Time-Based Access Control
 -------------------------
 
 ```python
-from djangoapi_guard.decorators import SecurityDecorator
+from djangoapi_guard import SecurityDecorator
 from django.http import JsonResponse
 
 guard_deco = SecurityDecorator(config)

@@ -48,7 +48,7 @@ Usage Examples
 --------------
 
 ```python
-from djangoapi_guard.utils import setup_custom_logging, detect_penetration_attempt
+from guard_core.sync.utils import setup_custom_logging, detect_penetration_attempt
 
 logger = setup_custom_logging("security.log")
 
