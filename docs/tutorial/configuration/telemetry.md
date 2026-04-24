@@ -63,19 +63,19 @@ MIDDLEWARE = [
 === "uv"
 
     ```bash
-    uv add djangoapi-guard "guard-core[otel]"
+    uv add djapi-guard "guard-core[otel]"
     ```
 
 === "poetry"
 
     ```bash
-    poetry add djangoapi-guard "guard-core[otel]"
+    poetry add djapi-guard "guard-core[otel]"
     ```
 
 === "pip"
 
     ```bash
-    pip install djangoapi-guard "guard-core[otel]"
+    pip install djapi-guard "guard-core[otel]"
     ```
 
 ```python
@@ -116,19 +116,19 @@ Any other metric type produces a one-line warning and is dropped.
 === "uv"
 
     ```bash
-    uv add djangoapi-guard "guard-core[logfire]"
+    uv add djapi-guard "guard-core[logfire]"
     ```
 
 === "poetry"
 
     ```bash
-    poetry add djangoapi-guard "guard-core[logfire]"
+    poetry add djapi-guard "guard-core[logfire]"
     ```
 
 === "pip"
 
     ```bash
-    pip install djangoapi-guard "guard-core[logfire]"
+    pip install djapi-guard "guard-core[logfire]"
     ```
 
 ```python

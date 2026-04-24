@@ -22,9 +22,23 @@ ___
 
 ### Installation
 
-```bash
-pip install djapi-guard
-```
+=== "uv"
+
+    ```bash
+    uv add djapi-guard
+    ```
+
+=== "poetry"
+
+    ```bash
+    poetry add djapi-guard
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install djapi-guard
+    ```
 
 ### Basic Usage
 
@@ -133,12 +147,29 @@ docker run -p 8000:8000 \
 
 ### Running Locally
 
-You can also run the example app locally with gunicorn:
+You can also run the example app locally with gunicorn. Install the dependencies:
+
+=== "uv"
+
+    ```bash
+    uv add djapi-guard gunicorn
+    ```
+
+=== "poetry"
+
+    ```bash
+    poetry add djapi-guard gunicorn
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install djapi-guard gunicorn
+    ```
+
+Then run:
 
 ```bash
-# Install dependencies
-pip install djapi-guard gunicorn
-
 # Run with gunicorn
 gunicorn examples.wsgi:application --bind 0.0.0.0:8000 --reload
 

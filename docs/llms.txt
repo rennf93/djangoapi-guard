@@ -134,7 +134,16 @@ Complete API documentation for all classes and functions:
 
 ## Installation
 
+Primary choice is `uv`, second is `poetry`, `pip` is the fallback.
+
 ```bash
+# uv (recommended)
+uv add djapi-guard
+
+# poetry
+poetry add djapi-guard
+
+# pip
 pip install djapi-guard
 ```
 

@@ -8,11 +8,25 @@ keywords: djangoapi guard installation, python security middleware, django secur
 Installation
 ============
 
-Install `djapi-guard` using pip:
+Install `djapi-guard` with **uv** (recommended), **poetry**, or **pip**:
 
-```bash
-pip install djapi-guard
-```
+=== "uv"
+
+    ```bash
+    uv add djapi-guard
+    ```
+
+=== "poetry"
+
+    ```bash
+    poetry add djapi-guard
+    ```
+
+=== "pip"
+
+    ```bash
+    pip install djapi-guard
+    ```
 
 **Note**: Ensure you have Python 3.10 or higher installed.
 
