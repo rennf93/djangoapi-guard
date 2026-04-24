@@ -1706,17 +1706,17 @@ class TestDjangoAPIGuardCoverage:
         assert "Host" in mapping
         assert "Missing" not in mapping
 
-    def test_init_routing_event_bus_none(self) -> None:
+    def test_build_event_bus_handler_initializer_none(self) -> None:
         middleware = self._make_middleware()
-        middleware.event_bus = None
-        with pytest.raises(RuntimeError, match="event_bus"):
-            middleware._init_routing_and_validation()
+        middleware.handler_initializer = None
+        with pytest.raises(RuntimeError, match="handler_initializer"):
+            middleware._build_event_bus_and_contexts()
 
-    def test_init_routing_response_factory_none(self) -> None:
+    def test_build_event_bus_route_resolver_none(self) -> None:
         middleware = self._make_middleware()
-        middleware.response_factory = None
-        with pytest.raises(RuntimeError, match="response_factory"):
-            middleware._init_routing_and_validation()
+        middleware.route_resolver = None
+        with pytest.raises(RuntimeError, match="route_resolver"):
+            middleware._build_event_bus_and_contexts()
 
     def test_process_behavioral_usage_none(self) -> None:
         middleware = self._make_middleware()

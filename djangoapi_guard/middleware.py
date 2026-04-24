@@ -67,7 +67,8 @@ class DjangoAPIGuard:
         self._init_redis_handler()
         self._init_agent_handler()
         self._init_core_components()
-        self._init_routing_and_validation()
+        self._init_route_resolver()
+        self._build_event_bus_and_contexts()
         self._build_security_pipeline()
         self._initialize_handlers()
 
@@ -115,11 +116,6 @@ class DjangoAPIGuard:
             self.logger.warning("Continuing without agent functionality")
 
     def _init_core_components(self) -> None:
-        self.event_bus = SecurityEventBus(
-            self.agent_handler, self.config, self.geo_ip_handler
-        )
-        self.metrics_collector = MetricsCollector(self.agent_handler, self.config)
-
         self.handler_initializer = HandlerInitializer(
             config=self.config,
             redis_handler=self.redis_handler,
@@ -128,6 +124,31 @@ class DjangoAPIGuard:
             rate_limit_handler=self.rate_limit_handler,
             guard_decorator=self.guard_decorator,
         )
+
+    def _init_route_resolver(self) -> None:
+        routing_context = RoutingContext(
+            config=self.config,
+            logger=self.logger,
+            guard_decorator=self.guard_decorator,
+        )
+        self.route_resolver = RouteConfigResolver(routing_context)
+
+    def _build_event_bus_and_contexts(self) -> None:
+        if self.handler_initializer is None:
+            raise RuntimeError("handler_initializer not initialized")
+        if self.route_resolver is None:
+            raise RuntimeError("route_resolver not initialized")
+
+        if self.handler_initializer.composite_handler is not None:
+            self.event_bus = self.handler_initializer.build_event_bus(
+                geo_ip_handler=self.geo_ip_handler
+            )
+            self.metrics_collector = self.handler_initializer.build_metrics_collector()
+        else:
+            self.event_bus = SecurityEventBus(
+                self.agent_handler, self.config, self.geo_ip_handler
+            )
+            self.metrics_collector = MetricsCollector(self.agent_handler, self.config)
 
         response_context = ResponseContext(
             config=self.config,
@@ -138,19 +159,6 @@ class DjangoAPIGuard:
             response_factory=self._guard_response_factory,
         )
         self.response_factory = ErrorResponseFactory(response_context)
-
-    def _init_routing_and_validation(self) -> None:
-        if self.event_bus is None:
-            raise RuntimeError("event_bus not initialized")
-        if self.response_factory is None:
-            raise RuntimeError("response_factory not initialized")
-
-        routing_context = RoutingContext(
-            config=self.config,
-            logger=self.logger,
-            guard_decorator=self.guard_decorator,
-        )
-        self.route_resolver = RouteConfigResolver(routing_context)
 
         validation_context = ValidationContext(
             config=self.config,
@@ -295,6 +303,9 @@ class DjangoAPIGuard:
         self.handler_initializer.guard_decorator = self.guard_decorator
         self.handler_initializer.initialize_redis_handlers()
         self.handler_initializer.initialize_agent_integrations()
+
+        if self.handler_initializer.composite_handler is not None:
+            self._build_event_bus_and_contexts()
 
     def _build_security_pipeline(self) -> None:
         from guard_core.sync.core.checks import (

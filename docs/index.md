@@ -8,6 +8,8 @@ keywords: django, security, middleware, python, ip control, rate limiting, penet
 
 # DjangoAPI Guard
 
+![DjangoAPI Guard](assets/djapi_guard_legend.svg)
+
 [![PyPI version](https://badge.fury.io/py/djapi-guard.svg?cache=none&icon=si%3Apython&icon_color=%23008cb4)](https://badge.fury.io/py/djapi-guard)
 [![Release](https://github.com/rennf93/djapi-guard/actions/workflows/release.yml/badge.svg)](https://github.com/rennf93/djapi-guard/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -107,7 +109,7 @@ You can also download the example app as a Docker container from [GitHub Contain
 docker pull ghcr.io/rennf93/djapi-guard-example:latest
 
 # Or pull a specific version (matches library releases)
-docker pull ghcr.io/rennf93/djapi-guard-example:v2.0.0
+docker pull ghcr.io/rennf93/djapi-guard-example:v2.1.0
 ```
 
 ___
