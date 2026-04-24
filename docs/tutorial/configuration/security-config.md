@@ -76,7 +76,7 @@ Agent Settings
 |-------|------|---------|-------------|
 | `enable_agent` | bool | False | Enable Guard Agent integration |
 | `agent_api_key` | str \| None | None | API key for agent authentication |
-| `agent_endpoint` | str | "https://api.fastapi-guard.com" | Agent API endpoint |
+| `agent_endpoint` | str | "https://api.guard-core.com" | Agent API endpoint |
 | `agent_enable_events` | bool | True | Send events to agent |
 | `agent_enable_metrics` | bool | True | Send metrics to agent |
 
