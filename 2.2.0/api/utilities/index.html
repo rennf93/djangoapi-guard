@@ -2194,6 +2194,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#detection-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#usage-examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2387,6 +2398,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#detection-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#usage-examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2435,12 +2457,25 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">is_ip_allowed</span><span class="p">(</span><span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">SecurityConfig</span><span class="p">,</span> <span class="n">ipinfo_db</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if IP address is allowed.&quot;&quot;&quot;</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">detect_penetration_attempt</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Detect potential penetration attempts using the Detection Engine.&quot;&quot;&quot;</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_client_ip</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">SecurityConfig</span><span class="p">,</span> <span class="n">agent_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Securely extract the client IP address from the request.&quot;&quot;&quot;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">detect_penetration_attempt</span><span class="p">(</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">config</span><span class="p">:</span> <span class="n">SecurityConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">route_config</span><span class="p">:</span> <span class="n">RouteConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DetectionResult</span><span class="p">:</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Detect potential penetration attempts using the Detection Engine.&quot;&quot;&quot;</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_client_ip</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">HttpRequest</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">SecurityConfig</span><span class="p">,</span> <span class="n">agent_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Securely extract the client IP address from the request.&quot;&quot;&quot;</span>
 </span></code></pre></div>
+<hr />
+<h2 id="detection-result">Detection Result<a class="headerlink" href="#detection-result" title="Permanent link">&para;</a></h2>
+<p><code>detect_penetration_attempt</code> returns a <code>DetectionResult</code> dataclass with the following fields:</p>
+<ul>
+<li><code>is_threat: bool</code> - Whether a threat was detected.</li>
+<li><code>trigger_info: str</code> - Human-readable description of the matched component and pattern.</li>
+<li><code>threat_categories: list[str]</code> - Categories raised by the detection engine (e.g. <code>sql_injection</code>, <code>xss</code>).</li>
+<li><code>threat_scores: dict[str, float]</code> - Per-category confidence scores produced by the detection engine.</li>
+</ul>
 <hr />
 <h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">guard_core.sync.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_custom_logging</span><span class="p">,</span> <span class="n">detect_penetration_attempt</span>
@@ -2448,7 +2483,14 @@
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">setup_custom_logging</span><span class="p">(</span><span class="s2">&quot;security.log&quot;</span><span class="p">)</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Check for penetration attempts</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">is_suspicious</span><span class="p">,</span> <span class="n">trigger_info</span> <span class="o">=</span> <span class="n">detect_penetration_attempt</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">detect_penetration_attempt</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">is_threat</span><span class="p">:</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">&quot;Suspicious request from </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> (categories=</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;REMOTE_ADDR&quot;</span><span class="p">),</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="n">result</span><span class="o">.</span><span class="n">trigger_info</span><span class="p">,</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>        <span class="n">result</span><span class="o">.</span><span class="n">threat_categories</span><span class="p">,</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="p">)</span>
 </span></code></pre></div>
 
 
