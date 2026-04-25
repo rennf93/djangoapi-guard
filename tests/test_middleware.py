@@ -847,7 +847,10 @@ class TestDjangoAPIGuard:
         ):
             with patch.dict(sys.modules, {"guard_agent": mock_agent_module}):
                 middleware = self._make_middleware(config)
-                assert middleware.agent_handler is mock_agent_instance
+                composite = middleware.handler_initializer.composite_handler
+                assert composite is not None
+                assert middleware.agent_handler is composite
+                assert mock_agent_instance in composite._handlers
                 mock_guard_agent_fn.assert_called_once_with(mock_agent_config)
 
     def test_agent_initialization_invalid_config(self) -> None:
@@ -1571,7 +1574,10 @@ class TestDjangoAPIGuardCoverage:
             patch.dict(sys.modules, {"guard_agent": mock_module}),
         ):
             middleware = self._make_middleware(config)
-            assert middleware.agent_handler is mock_agent
+            composite = middleware.handler_initializer.composite_handler
+            assert composite is not None
+            assert middleware.agent_handler is composite
+            assert mock_agent in composite._handlers
 
     def test_agent_init_import_blocked(self) -> None:
         import builtins

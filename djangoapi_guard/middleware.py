@@ -140,6 +140,7 @@ class DjangoAPIGuard:
             raise RuntimeError("route_resolver not initialized")
 
         if self.handler_initializer.composite_handler is not None:
+            self.agent_handler = self.handler_initializer.composite_handler
             self.event_bus = self.handler_initializer.build_event_bus(
                 geo_ip_handler=self.geo_ip_handler
             )
@@ -182,6 +183,7 @@ class DjangoAPIGuard:
             logger=self.logger,
             event_bus=self.event_bus,
             guard_decorator=self.guard_decorator,
+            behavior_tracker=self.handler_initializer.behavior_tracker,
         )
         self.behavioral_processor = BehavioralProcessor(behavioral_context)
 
