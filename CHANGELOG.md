@@ -3,6 +3,18 @@ Changelog
 
 ___
 
+v3.0.0 (2026-04-26)
+-------------------
+
+### Breaking
+- Preflight `OPTIONS` requests are now subject to the security pipeline. Previously the middleware short-circuited preflights ahead of `_execute_security_pipeline`, allowing banned IPs and rate-limited clients to preflight freely.
+
+### Internal
+- CORS preflight handling moved to the shared `guard_core.sync.handlers.cors_handler.CorsHandler` module.
+- Requires `guard-core>=2.2.0`.
+
+___
+
 v2.2.0 (2026-04-25)
 -------------------
 
