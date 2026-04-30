@@ -80,6 +80,13 @@ class DjangoAPIGuard:
     def guard_response_factory(self) -> DjangoResponseFactory:
         return self._guard_response_factory
 
+    @property
+    def agent_stats(self) -> dict[str, Any]:
+        if self.agent_handler is None:
+            return {"enabled": False}
+        handler_stats = cast(Any, self.agent_handler).get_stats()
+        return {"enabled": True, **handler_stats}
+
     def _init_geo_ip_handler(self) -> None:
         self.geo_ip_handler = None
         if self.config.whitelist_countries or self.config.blocked_countries:

@@ -1856,3 +1856,63 @@ class TestDjangoAPIGuardCoverage:
         keys = list(mapping)
         assert len(keys) == 2
         assert len(mapping) == 2
+
+    def test_agent_stats_returns_disabled_when_agent_handler_unset(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_agent=False,
+            enable_penetration_detection=False,
+        )
+        middleware = self._make_middleware(config)
+        assert middleware.agent_handler is None
+        assert middleware.agent_stats == {"enabled": False}
+
+    def test_agent_stats_returns_enabled_with_agent_handler_stats(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_agent=False,
+            enable_penetration_detection=False,
+        )
+        middleware = self._make_middleware(config)
+
+        fake_handler = MagicMock()
+        fake_handler.get_stats.return_value = {
+            "buffer_stats": {"events_dropped": 0, "metrics_dropped": 0},
+            "transport_stats": {"circuit_breaker_state": "CLOSED"},
+        }
+        middleware.agent_handler = fake_handler
+
+        stats = middleware.agent_stats
+        assert stats["enabled"] is True
+        assert stats["buffer_stats"] == {"events_dropped": 0, "metrics_dropped": 0}
+        assert stats["transport_stats"] == {"circuit_breaker_state": "CLOSED"}
+        fake_handler.get_stats.assert_called_once()
+
+    def test_agent_stats_reflects_live_drop_counter_increments(self) -> None:
+        config = SecurityConfig(
+            enable_redis=False,
+            enable_agent=False,
+            enable_penetration_detection=False,
+        )
+        middleware = self._make_middleware(config)
+
+        fake_handler = MagicMock()
+        fake_handler.get_stats.return_value = {
+            "buffer_stats": {"events_dropped": 0, "metrics_dropped": 0},
+            "transport_stats": {"circuit_breaker_state": "CLOSED"},
+        }
+        middleware.agent_handler = fake_handler
+
+        first = middleware.agent_stats
+        assert first["buffer_stats"]["events_dropped"] == 0
+
+        fake_handler.get_stats.return_value = {
+            "buffer_stats": {"events_dropped": 7, "metrics_dropped": 3},
+            "transport_stats": {"circuit_breaker_state": "OPEN"},
+        }
+
+        second = middleware.agent_stats
+        assert second["buffer_stats"]["events_dropped"] == 7
+        assert second["buffer_stats"]["metrics_dropped"] == 3
+        assert second["transport_stats"]["circuit_breaker_state"] == "OPEN"
+        assert fake_handler.get_stats.call_count == 2

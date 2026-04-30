@@ -3,6 +3,36 @@ Release Notes
 
 ___
 
+v4.0.0 (2026-04-29)
+-------------------
+
+Fail-secure by default (upstream), agent-stats surface, version reporting (v4.0.0)
+----------------------------------------------------------------------------------
+
+- **Breaking (upstream)** — `SecurityConfig.fail_secure` now defaults to `True` (inherited from `guard-core >= 3.0.0`). When any security check raises an unhandled exception, the request is now blocked with HTTP 500 instead of logging and falling through. Bugs in checks that previously slipped past as silent fail-open responses now surface immediately. Restore the old behavior on deployments that depend on it via `SecurityConfig(fail_secure=False)`. Recommended migration: keep the new default, surface any check exceptions in your monitoring, and fix them — the previous default could mask serious bugs. The djapi-guard major bump tracks this upstream change so deployments see a clear signal.
+- **Added** — `DjangoAPIGuard.agent_stats` read-only `@property` returning the agent's telemetry buffer state. Returns `{"enabled": False}` when no agent is wired; otherwise returns `{"enabled": True, **agent_handler.get_stats()}` exposing `events_dropped`, `metrics_dropped`, `circuit_breaker_state`, and other agent counters. No caching — fresh on each call. Lets app teams build health endpoints that surface agent-side drops and circuit-breaker trips without scraping the agent directly.
+- **Added** — `from djangoapi_guard import __version__` — package version is now exported via `importlib.metadata.version("djapi-guard")` with a `"0.0.0+unknown"` fallback if the package is not installed (development from source). Pairs with `guard-core >= 3.0.0`'s `SecurityConfig.agent_guard_version` so application code can wire the djapi-guard version through to the agent for SaaS-side telemetry attribution: `SecurityConfig(agent_guard_version=__version__)`.
+- **Compatibility** — `DjangoAPIGuard.agent_stats` is purely additive; no existing API was changed. `__version__` was previously absent; reading it before this release returned `None` via missing-attribute fallback in some integrations.
+
+___
+
+v3.0.0 (2026-04-26)
+-------------------
+
+Pipeline-first CORS via guard_core.cors_handler (v3.0.0)
+--------------------------------------------------------
+
+- **Breaking** — Preflight `OPTIONS` requests are now subject to the security pipeline. Previously the middleware short-circuited preflights ahead of `_execute_security_pipeline` (the `if config.enable_cors and request.method == "OPTIONS"` block at line 227), allowing banned IPs and rate-limited clients to preflight freely.
+- **Fixed** — Cross-origin preflight requests to passthrough paths (e.g. `exclude_paths=["/health"]`) now receive a valid CORS response. Preflight handling runs ahead of the passthrough/bypass short-circuit so the browser permission check works for excluded paths.
+- **Fixed** — Cross-origin GETs to passthrough/bypass paths now carry CORS headers on their responses.
+- **Fixed (latent)** — `middleware.py` was importing `BaseSecurityDecorator` and `RouteConfig` from `guard_core.decorators.base` (the async path) when it should have been using `guard_core.sync.decorators.base`. Sync/async protocol mismatches cascaded from there. Surfaced after removing the `[[tool.mypy.overrides]] follow_imports = "skip"` block.
+- **Fixed (latent)** — `cloud_handler.refresh(ttl=...)` was being called with a `ttl` kwarg the method does not accept; correct call is `refresh_async()`.
+- **Fixed (latent)** — 4 tests passed `agent_model="..."` to `SecurityConfig`; that field does not exist on the model.
+- **Internal** — CORS preflight handling moved to the shared `guard_core.sync.handlers.cors_handler.CorsHandler` module. Removed all six `[[tool.mypy.overrides]]` suppression blocks (`redis.*`, `guard_agent.*`, `guard_core.*`, `django.*`, `examples.*`, `example_app.*`/`advanced_app.*`). Installed `django-stubs` as dev dep; `redis` 7.x, `guard-core` 2.2.0, `guard-agent` 2.2.0 all ship `py.typed`. Stripped `[tool.uv.sources] guard-core` local-path block from committed pyproject.toml. Added `reset_ratelimit_singleton` autouse fixture to `tests/conftest.py` so test runs no longer accumulate rate-limit state across tests.
+- **Requires** — `guard-core>=2.2.0` (declared as unconstrained `guard-core` in pyproject; documented here for upgrade guidance).
+
+___
+
 v2.2.0 (2026-04-25)
 -------------------
 
