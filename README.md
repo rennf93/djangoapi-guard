@@ -135,6 +135,59 @@ pip install djapi-guard
 
 ___
 
+## Migrating to v4.0.0
+
+`djapi-guard` 4.0.0 tracks `guard-core >= 3.0.0`'s fail-secure default flip and adds two adapter-side surfaces.
+
+### Fail-secure default flip (upstream)
+
+`SecurityConfig.fail_secure` now defaults to `True`. If any security check raises an unhandled exception, the request is blocked with HTTP 500 instead of falling through. Restore the previous behavior on deployments that depend on it:
+
+```python
+from djangoapi_guard import SecurityConfig
+
+GUARD_SECURITY_CONFIG = SecurityConfig(
+    fail_secure=False,
+)
+```
+
+The recommended migration is to keep the new default, surface check exceptions in your monitoring, and fix them at the root.
+
+### Reading agent buffer state
+
+`DjangoAPIGuard.agent_stats` exposes the agent's live buffer drop counters and circuit-breaker state without reaching into the agent directly. Build it into a health-check view:
+
+```python
+from django.http import JsonResponse
+from djangoapi_guard.middleware import DjangoAPIGuard
+
+
+def agent_health(request):
+    middleware: DjangoAPIGuard = request._guard_middleware
+    return JsonResponse(middleware.agent_stats)
+# {"enabled": True,
+#  "buffer_stats": {"events_dropped": 0, "metrics_dropped": 0, ...},
+#  "transport_stats": {"circuit_breaker_state": "CLOSED", ...}}
+```
+
+When the agent is disabled or failed to initialize, the property returns `{"enabled": False}`. Read it on each scrape — it reflects live counters and is not cached.
+
+### Wiring the package version through to the agent
+
+```python
+from djangoapi_guard import SecurityConfig, __version__
+
+GUARD_SECURITY_CONFIG = SecurityConfig(
+    enable_agent=True,
+    agent_api_key="...",
+    agent_guard_version=__version__,
+)
+```
+
+`__version__` resolves via `importlib.metadata.version("djapi-guard")` and falls back to `"0.0.0+unknown"` when the package is not installed (development from source). Pairs with `guard-core >= 3.0.0`'s `SecurityConfig.agent_guard_version` for SaaS-side telemetry attribution.
+
+___
+
 ## Usage
 
 ## Basic Setup
